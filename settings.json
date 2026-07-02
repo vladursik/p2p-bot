@@ -1,0 +1,8 @@
+{
+  "buy_threshold": 43.7,
+  "sell_threshold": 46.5,
+  "min_amount_uah": 2000,
+  "min_amount_sell": 1000,
+  "check_interval": 20,
+  "balance_usdt": 1005.0
+}

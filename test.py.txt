@@ -1,0 +1,42 @@
+import requests
+
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+})
+
+print("=== BINANCE ===")
+r = session.post(
+    "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search",
+    json={
+        "asset": "USDT", "fiat": "UAH",
+        "merchantCheck": False,
+        "page": 1, "rows": 5,
+        "payTypes": [],
+        "tradeType": "BUY",
+    },
+    timeout=12
+)
+print(f"Status: {r.status_code}")
+print(r.text[:500])
+
+print()
+
+print("=== BYBIT ===")
+r2 = session.post(
+    "https://api2.bybit.com/fiat/otc/item/online",
+    json={
+        "tokenId": "USDT", "currencyId": "UAH",
+        "payment": [], "side": "1",
+        "size": "5", "page": "1",
+        "amount": "", "authMaker": False, "canTrade": False,
+    },
+    headers={
+        "Content-Type": "application/json;charset=UTF-8",
+        "Origin": "https://www.bybit.com",
+        "Referer": "https://www.bybit.com/fiat/trade/otc/",
+    },
+    timeout=15
+)
+print(f"Status: {r2.status_code}")
+print(r2.text[:500])
