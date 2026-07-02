@@ -74,6 +74,7 @@ def default_user_data(chat_id: int, username: str = "", first_name: str = "") ->
         "balance_usdt":    0.0,
         "blacklist_buy":  [],
         "blacklist_sell": [],
+        "enabled_banks":  dict(DEFAULT_ENABLED_BANKS),
     }
 
 def get_user(chat_id: int) -> dict | None:
@@ -150,6 +151,28 @@ session = requests.Session()
 
 FOP_KEYWORDS = ["фоп", " тов ", "тов.", "(тов)"]
 
+# ==================== БАНКИ (per user toggle) ====================
+
+BANK_LABELS = {
+    "mono":   "Monobank",
+    "privat": "ПриватБанк",
+    "abank":  "A-Bank",
+}
+BANK_KEYWORDS = {
+    "mono":   ["monobank", "mono"],
+    "privat": ["privat", "приват"],
+    "abank":  ["a-bank", "abank", "a bank"],
+}
+DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True}
+BANK_ORDER = ["mono", "privat", "abank"]
+
+def get_enabled_banks(ud: dict) -> dict:
+    eb = (ud or {}).get("enabled_banks")
+    merged = dict(DEFAULT_ENABLED_BANKS)
+    if eb:
+        merged.update(eb)
+    return merged
+
 MAX_RETRIES  = 3
 RETRY_DELAYS = [5, 15, 30]
 
@@ -185,8 +208,7 @@ def get_binance_p2p(trade_type: str, user_data: dict):
         "tradeType": trade_type,
     }
 
-    # Способи оплати, які нас цікавлять (підрядок, регістр не важливий)
-    ALLOWED_PAY_METHODS = ["privat", "a-bank", "abank"]
+    enabled_banks = get_enabled_banks(user_data)
 
     chat_id   = user_data["chat_id"]
     my_amount = user_data["min_amount_sell"] if trade_type == "SELL" else user_data["min_amount_uah"]
@@ -224,8 +246,15 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     (m.get("tradeMethodName") or "") for m in adv.get("tradeMethods", [])
                 ).lower()
 
-                # Показуємо тільки оголошення з потрібними способами оплати
-                if not any(word in pay_methods_text for word in ALLOWED_PAY_METHODS):
+                # Показуємо тільки оголошення з банками, увімкненими у користувача
+                matched_bank = None
+                for bank_key in BANK_ORDER:
+                    if not enabled_banks.get(bank_key, True):
+                        continue
+                    if any(kw in pay_methods_text for kw in BANK_KEYWORDS[bank_key]):
+                        matched_bank = bank_key
+                        break
+                if not matched_bank:
                     continue
 
                 all_text = " ".join([
@@ -281,6 +310,8 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     "remarks":       adv.get("remarks", ""),
                     "orders":        orders,
                     "rate":          rate,
+                    "bank":          matched_bank,
+                    "bank_label":    BANK_LABELS[matched_bank],
                 })
 
             if not results:
@@ -339,9 +370,11 @@ def send_alert(chat_id: int, trade_type: str, adv: dict, balance_usdt: float = 0
             profit_sign = "+" if profit >= 0 else ""
             profit_text = f"\n💰 Прибуток: {profit_sign}{profit} UAH"
 
+    bank_label = adv.get("bank_label", "")
     text = (
         f"{header}\n"
         f"{'─'*22}\n"
+        f"🏦 Банк: {bank_label}\n"
         f"👤 {adv['merchant']}\n"
         f"💸 Лімит: {fmt_limit(adv['min_limit'], adv['max_limit'])}\n"
         f"📊 Угод: {adv['orders']} | Успіх: {adv['rate']}%"
@@ -465,12 +498,16 @@ def send_main_menu(chat_id: int):
     markup.add(types.KeyboardButton("💰 Моя сума BUY"),     types.KeyboardButton("💰 Моя сума SELL"))
     markup.add(types.KeyboardButton("💎 Баланс USDT"),      types.KeyboardButton("⏱ Інтервал"))
     markup.add(types.KeyboardButton("🚫 Блеклист BUY"),     types.KeyboardButton("🚫 Блеклист SELL"))
-    markup.add(types.KeyboardButton("📋 Статус"))
+    markup.add(types.KeyboardButton("🏦 Банки"),            types.KeyboardButton("📋 Статус"))
 
     if is_admin(chat_id):
         markup.add(types.KeyboardButton("👥 Адмін панель"))
 
     balance_text = f"{ud['balance_usdt']} USDT" if ud["balance_usdt"] > 0 else "вимкнено"
+    eb = get_enabled_banks(ud)
+    banks_text = ", ".join(
+        f"{BANK_LABELS[k]} {'✅' if eb.get(k, True) else '❌'}" for k in BANK_ORDER
+    )
     bot.send_message(
         chat_id,
         f"⚙️ Налаштування\n"
@@ -480,7 +517,8 @@ def send_main_menu(chat_id: int):
         f"💵 Моя сума BUY: {ud['min_amount_uah']} UAH\n"
         f"💵 Моя сума SELL: {ud['min_amount_sell']} UAH\n"
         f"💎 Баланс USDT: {balance_text}\n"
-        f"⏱ Інтервал: {ud['check_interval']} сек",
+        f"⏱ Інтервал: {ud['check_interval']} сек\n"
+        f"🏦 Банки: {banks_text}",
         reply_markup=markup,
     )
 
@@ -600,6 +638,69 @@ def handle_admin_back(call):
     except Exception: pass
     send_admin_panel(call.message.chat.id)
     bot.answer_callback_query(call.id)
+
+
+# ==================== БАНКИ: МЕНЮ + CALLBACK ====================
+
+def _banks_markup(eb: dict) -> types.InlineKeyboardMarkup:
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    for key in BANK_ORDER:
+        icon = "✅" if eb.get(key, True) else "❌"
+        markup.add(types.InlineKeyboardButton(f"{icon} {BANK_LABELS[key]}", callback_data=f"bank_toggle|{key}"))
+    markup.add(types.InlineKeyboardButton("✔️ Готово", callback_data="bank_done"))
+    return markup
+
+
+def send_banks_menu(chat_id: int):
+    ud = get_user(chat_id)
+    if not ud:
+        return
+    eb = get_enabled_banks(ud)
+    bot.send_message(
+        chat_id,
+        f"🏦 Банки для моніторингу\n{'─'*22}\n"
+        f"✅ — увімкнено, алерти по цьому банку приходять\n"
+        f"❌ — вимкнено, оголошення цього банку ігноруються\n\n"
+        f"Натисни на банк щоб перемкнути:",
+        reply_markup=_banks_markup(eb)
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("bank_toggle|"))
+def handle_bank_toggle(call):
+    cid = call.from_user.id
+    if not is_active(cid):
+        bot.answer_callback_query(call.id, "❌ Немає доступу")
+        return
+    try:
+        key = call.data.split("|", 1)[1]
+        ud  = get_user(cid)
+        eb  = get_enabled_banks(ud)
+        new_val = not eb.get(key, True)
+
+        # запобіжник: хоча б один банк має лишатись увімкненим
+        if not new_val and sum(1 for v in eb.values() if v) <= 1 and eb.get(key, True):
+            bot.answer_callback_query(call.id, "⚠️ Хоча б один банк має бути увімкнений")
+            return
+
+        eb[key] = new_val
+        update_user_field(cid, "enabled_banks", eb)
+
+        try:
+            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=_banks_markup(eb))
+        except Exception: pass
+        bot.answer_callback_query(call.id, f"{BANK_LABELS[key]}: {'✅ увімкнено' if new_val else '❌ вимкнено'}")
+    except Exception as e:
+        logger.error(f"Помилка bank_toggle: {e}", exc_info=True)
+        bot.answer_callback_query(call.id, "❌ Помилка")
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "bank_done")
+def handle_bank_done(call):
+    try:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+    except Exception: pass
+    bot.answer_callback_query(call.id, "✅ Збережено")
 
 
 # ==================== БЛЕКЛИСТ: CALLBACK ====================
@@ -811,7 +912,7 @@ def _handle(message, text):
         "📋 Статус", "📉 Поріг покупки", "📈 Поріг продажу",
         "💰 Моя сума BUY", "💰 Моя сума SELL", "💎 Баланс USDT",
         "⏱ Інтервал", "🚫 Блеклист BUY", "🚫 Блеклист SELL",
-        "👥 Адмін панель"
+        "🏦 Банки", "👥 Адмін панель"
     ]
 
     if text not in known:
@@ -859,8 +960,8 @@ def _handle(message, text):
 
             bot.send_message(cid,
                 f"📊 Поточні ціни\n{'─'*22}\n"
-                f"🟢 BUY:  {buy['price']} ₴  ({buy['merchant']})\n"
-                f"🔴 SELL: {sell['price']} ₴  ({sell['merchant']})\n"
+                f"🟢 BUY:  {buy['price']} ₴  ({buy['merchant']}, {buy['bank_label']})\n"
+                f"🔴 SELL: {sell['price']} ₴  ({sell['merchant']}, {sell['bank_label']})\n"
                 f"📊 Спред: {spread}%"
                 f"{profit_text}"
                 f"{history_text}")
@@ -878,6 +979,10 @@ def _handle(message, text):
         bl_sell = len(ud_fresh.get("blacklist_sell", []))
         balance = ud_fresh.get("balance_usdt", 0)
         balance_text = f"{balance} USDT" if balance > 0 else "вимкнено"
+        eb = get_enabled_banks(ud_fresh)
+        banks_text = ", ".join(
+            f"{BANK_LABELS[k]} {'✅' if eb.get(k, True) else '❌'}" for k in BANK_ORDER
+        )
         bot.send_message(cid,
             f"📋 Статус бота\n{'─'*22}\n"
             f"🔄 Моніторинг: {'✅ Активний' if ud_fresh.get('monitoring') else '⏹ Зупинений'}\n"
@@ -890,6 +995,7 @@ def _handle(message, text):
             f"💵 Сума BUY: {ud_fresh['min_amount_uah']} UAH\n"
             f"💵 Сума SELL: {ud_fresh['min_amount_sell']} UAH\n"
             f"💎 Баланс USDT: {balance_text}\n"
+            f"🏦 Банки: {banks_text}\n"
             f"🚫 Блеклист BUY: {bl_buy} мерчантів\n"
             f"🚫 Блеклист SELL: {bl_sell} мерчантів")
 
@@ -935,6 +1041,9 @@ def _handle(message, text):
         ud_fresh = get_user(cid)
         msg = bot.send_message(cid, f"⏱ Поточний інтервал: {ud_fresh['check_interval']} сек\nВведи нове значення (сек):")
         bot.register_next_step_handler(msg, lambda m: update_val(m, "interval"))
+
+    elif text == "🏦 Банки":
+        send_banks_menu(cid)
 
     elif text == "👥 Адмін панель":
         if not is_admin(cid):
