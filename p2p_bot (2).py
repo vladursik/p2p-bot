@@ -139,6 +139,12 @@ def clear_blacklist(chat_id: int, trade_type: str):
         users[key][field] = []
         save_users(users)
 
+def blacklist_display_name(key: str) -> str:
+    if "::" in key:
+        nick, bank_key = key.split("::", 1)
+        return f"{nick} ({BANK_LABELS.get(bank_key, bank_key)})"
+    return key
+
 def is_blacklisted(chat_id: int, merchant: str, trade_type: str) -> bool:
     u     = get_user(chat_id)
     field = "blacklist_buy" if trade_type == "BUY" else "blacklist_sell"
@@ -241,7 +247,7 @@ def get_binance_p2p(trade_type: str, user_data: dict):
             resp = r.json()
 
             if not resp or not resp.get("data"):
-                return None
+                return []  # запит успішний, просто немає оголошень — це не падіння API
 
             results = []
             for item in resp["data"]:
@@ -250,9 +256,6 @@ def get_binance_p2p(trade_type: str, user_data: dict):
 
                 price    = float(adv["price"])
                 merchant = user["nickName"]
-
-                if is_blacklisted(chat_id, merchant, trade_type):
-                    continue
 
                 pay_methods_text = " ".join(
                     (m.get("tradeMethodName") or "") for m in adv.get("tradeMethods", [])
@@ -267,6 +270,11 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                         matched_bank = bank_key
                         break
                 if not matched_bank:
+                    continue
+
+                # Бан прив'язаний до пари мерчант+банк, а не до мерчанта повністю —
+                # забанивши оголошення на Mono, не втрачаємо його ж оголошення на Privat
+                if is_blacklisted(chat_id, f"{merchant}::{matched_bank}", trade_type):
                     continue
 
                 all_text = " ".join([
@@ -333,7 +341,7 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 })
 
             if not results:
-                return None
+                return []  # жодне оголошення не пройшло фільтри — API живий, просто зараз нічого підходящого
 
             results.sort(key=lambda x: x["price"], reverse=(trade_type == "SELL"))
             return results
@@ -358,7 +366,7 @@ def fmt_limit(mn, mx):
 
 # ==================== ВІДПРАВКА АЛЕРТІВ ====================
 
-def make_alert_markup(merchant: str, trade_type: str, advertiser_no: str, adv_no: str) -> types.InlineKeyboardMarkup:
+def make_alert_markup(merchant: str, trade_type: str, advertiser_no: str, adv_no: str, bank: str = "") -> types.InlineKeyboardMarkup:
     markup = types.InlineKeyboardMarkup(row_width=2)
     url = (
         f"https://p2p.binance.com/en/advertiserDetail?advertiserNo={advertiser_no}"
@@ -366,9 +374,10 @@ def make_alert_markup(merchant: str, trade_type: str, advertiser_no: str, adv_no
         "https://p2p.binance.com/uk-UA/trade/all-payments/USDT?fiat=UAH"
     )
     markup.add(types.InlineKeyboardButton("🔗 Відкрити ордер", url=url))
+    key = f"{merchant}::{bank}" if bank else merchant
     markup.add(
-        types.InlineKeyboardButton("🚫 Бан BUY",  callback_data=f"bl|BUY|{merchant}"[:64]),
-        types.InlineKeyboardButton("🚫 Бан SELL", callback_data=f"bl|SELL|{merchant}"[:64]),
+        types.InlineKeyboardButton("🚫 Бан BUY (цей банк)",  callback_data=f"bl|BUY|{key}"[:64]),
+        types.InlineKeyboardButton("🚫 Бан SELL (цей банк)", callback_data=f"bl|SELL|{key}"[:64]),
     )
     return markup
 
@@ -398,7 +407,7 @@ def send_alert(chat_id: int, trade_type: str, adv: dict, balance_usdt: float = 0
         f"📊 Угод: {adv['orders']} | Успіх: {adv['rate']}%"
         f"{profit_text}"
     )
-    markup = make_alert_markup(adv["merchant"], trade_type, adv.get("advertiser_no",""), adv.get("adv_no",""))
+    markup = make_alert_markup(adv["merchant"], trade_type, adv.get("advertiser_no",""), adv.get("adv_no",""), adv.get("bank",""))
     try:
         bot.send_message(chat_id, text, reply_markup=markup)
     except Exception as e:
@@ -733,6 +742,7 @@ def handle_blacklist_callback(call):
         _, trade_type, merchant = call.data.split("|", 2)
         added = add_to_blacklist(cid, merchant, trade_type)
         label = "BUY 🟢" if trade_type == "BUY" else "SELL 🔴"
+        disp  = blacklist_display_name(merchant)
         if added:
             try:
                 original_text = call.message.text or ""
@@ -743,9 +753,9 @@ def handle_blacklist_callback(call):
                     reply_markup=None
                 )
             except Exception: pass
-            bot.answer_callback_query(call.id, f"✅ {merchant} заблоковано для {label}")
+            bot.answer_callback_query(call.id, f"✅ {disp} заблоковано для {label}")
         else:
-            bot.answer_callback_query(call.id, f"⚠️ {merchant} вже в блеклісті")
+            bot.answer_callback_query(call.id, f"⚠️ {disp} вже в блеклісті")
     except Exception as e:
         logger.error(f"Помилка handle_blacklist_callback: {e}", exc_info=True)
         bot.answer_callback_query(call.id, "❌ Помилка")
@@ -772,11 +782,12 @@ def handle_unblacklist_callback(call):
         _, trade_type, merchant = call.data.split("|", 2)
         removed = remove_from_blacklist(cid, merchant, trade_type)
         label = "BUY 🟢" if trade_type == "BUY" else "SELL 🔴"
+        disp  = blacklist_display_name(merchant)
 
         if removed:
-            bot.answer_callback_query(call.id, f"✅ {merchant} видалено")
+            bot.answer_callback_query(call.id, f"✅ {disp} видалено")
         else:
-            bot.answer_callback_query(call.id, f"⚠️ {merchant} не знайдено")
+            bot.answer_callback_query(call.id, f"⚠️ {disp} не знайдено")
 
         _show_blacklist(cid, trade_type, call.message)
 
@@ -804,7 +815,7 @@ def _show_blacklist(chat_id: int, trade_type: str, message=None):
 
     markup = types.InlineKeyboardMarkup(row_width=1)
     for nick in bl_copy:
-        markup.add(types.InlineKeyboardButton(f"❌ {nick}", callback_data=f"unbl|{trade_type}|{nick}"))
+        markup.add(types.InlineKeyboardButton(f"❌ {blacklist_display_name(nick)}", callback_data=f"unbl|{trade_type}|{nick}"))
     markup.add(types.InlineKeyboardButton(f"🗑 Очистити весь блеклист {label}", callback_data=f"unbl_all|{trade_type}"))
 
     text = (f"🚫 Блеклист {label} ({len(bl_copy)} мерчантів):\n"
