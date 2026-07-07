@@ -154,6 +154,16 @@ def is_blacklisted(chat_id: int, merchant: str, trade_type: str) -> bool:
 
 bot     = telebot.TeleBot(TOKEN)
 session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "*/*",
+    "Content-Type": "application/json",
+    "clienttype": "web",
+    "lang": "uk-UA",
+    "Referer": "https://p2p.binance.com/uk-UA/trade/all-payments/USDT?fiat=UAH",
+    "Origin": "https://p2p.binance.com",
+})
 
 FOP_KEYWORDS = ["фоп", " тов ", "тов.", "(тов)"]
 
@@ -234,7 +244,6 @@ def get_binance_p2p(trade_type: str, user_data: dict):
 
     for attempt in range(MAX_RETRIES):
         try:
-            session.cookies.clear()
             r = session.post(url, json=data, timeout=12)
 
             if r.status_code == 429:
@@ -243,10 +252,16 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 time.sleep(wait)
                 continue
 
+            if r.status_code != 200:
+                logger.warning(
+                    f"Binance P2P HTTP {r.status_code} ({trade_type}), "
+                    f"body: {r.text[:300]!r}"
+                )
             r.raise_for_status()
             resp = r.json()
 
             if not resp or not resp.get("data"):
+                logger.info(f"Binance P2P: порожня відповідь ({trade_type}): {str(resp)[:300]}")
                 return []  # запит успішний, просто немає оголошень — це не падіння API
 
             results = []
@@ -261,16 +276,23 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     (m.get("tradeMethodName") or "") for m in adv.get("tradeMethods", [])
                 ).lower()
 
-                # Показуємо тільки оголошення з банками, увімкненими у користувача
-                matched_bank = None
+                # Показуємо тільки оголошення з банками, увімкненими у користувача.
+                # Збираємо ВСІ банки, що збіглися (а не лише перший по порядку) —
+                # інакше оголошення з кількома методами оплати (напр. Укргазбанк + A-Bank)
+                # неправильно потрапляє під обмеження "тільки фізособа" через A-Bank,
+                # хоча по Укргазбанку воно мало б пройти без обмежень.
+                matched_banks = []
                 for bank_key in BANK_ORDER:
                     if not enabled_banks.get(bank_key, True):
                         continue
                     if any(kw in pay_methods_text for kw in BANK_KEYWORDS[bank_key]):
-                        matched_bank = bank_key
-                        break
-                if not matched_bank:
+                        matched_banks.append(bank_key)
+                if not matched_banks:
                     continue
+
+                # Пріоритет — банку БЕЗ обмеження "тільки фізособа", якщо такий є серед збігів
+                unrestricted = [b for b in matched_banks if b not in BANKS_REQUIRE_INDIVIDUAL]
+                matched_bank = unrestricted[0] if unrestricted else matched_banks[0]
 
                 # Бан прив'язаний до пари мерчант+банк, а не до мерчанта повністю —
                 # забанивши оголошення на Mono, не втрачаємо його ж оголошення на Privat
@@ -341,6 +363,10 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 })
 
             if not results:
+                logger.info(
+                    f"Binance P2P ({trade_type}): отримано {len(resp['data'])} оголошень, "
+                    f"жодне не пройшло фільтри (банки/ліміти/бан-лист)"
+                )
                 return []  # жодне оголошення не пройшло фільтри — API живий, просто зараз нічого підходящого
 
             results.sort(key=lambda x: x["price"], reverse=(trade_type == "SELL"))

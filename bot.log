@@ -1,3 +1,547 @@
 2026-07-02 14:52:57,036 [INFO] Бот запускається (мультикористувацький режим)...
 2026-07-02 14:52:57,036 [INFO] Потік моніторингу запущено
 2026-07-02 14:52:57,036 [INFO] Polling запущено
+2026-07-07 14:26:40,060 [INFO] Бот запускається (мультикористувацький режим)...
+2026-07-07 14:26:40,060 [INFO] Потік моніторингу запущено
+2026-07-07 14:26:40,060 [INFO] Polling запущено
+2026-07-07 14:26:43,512 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:26:43,513 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:26:58,129 [INFO] Бот запускається (мультикористувацький режим)...
+2026-07-07 14:26:58,129 [INFO] Потік моніторингу запущено
+2026-07-07 14:26:58,129 [INFO] Polling запущено
+2026-07-07 14:27:15,383 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:27:15,384 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:28:18,733 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:28:18,734 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:29:22,037 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:29:22,038 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:29:52,592 [INFO] Бот запускається (мультикористувацький режим)...
+2026-07-07 14:29:52,592 [INFO] Потік моніторингу запущено
+2026-07-07 14:29:52,592 [INFO] Polling запущено
+2026-07-07 14:30:25,359 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:30:25,360 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:30:42,206 [INFO] Бот запускається (мультикористувацький режим)...
+2026-07-07 14:30:42,206 [INFO] Потік моніторингу запущено
+2026-07-07 14:30:42,206 [INFO] Polling запущено
+2026-07-07 14:31:28,669 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:31:28,670 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:32:31,963 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:32:31,963 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:34:59,486 [INFO] Бот запускається (мультикористувацький режим)...
+2026-07-07 14:34:59,486 [INFO] Потік моніторингу запущено
+2026-07-07 14:34:59,486 [INFO] Polling запущено
+2026-07-07 14:35:03,019 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:35:03,020 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:35:06,829 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:35:06,830 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:35:11,390 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:35:11,391 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:35:17,443 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:35:17,444 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:35:23,494 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:35:23,495 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:35:35,546 [ERROR] Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-07-07 14:35:35,547 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-07-07 14:42:33,545 [CRITICAL] TOKEN або ADMIN_ID не задані в .env — вихід
+2026-07-07 14:42:37,022 [CRITICAL] TOKEN або ADMIN_ID не задані в .env — вихід
+2026-07-07 14:43:01,241 [CRITICAL] TOKEN або ADMIN_ID не задані в .env — вихід
+2026-07-07 14:43:16,626 [CRITICAL] TOKEN або ADMIN_ID не задані в .env — вихід
+2026-07-07 14:44:11,069 [INFO] Бот запускається (мультикористувацький режим)...
+2026-07-07 14:44:11,070 [INFO] Потік моніторингу запущено
+2026-07-07 14:44:11,070 [INFO] Polling запущено
+2026-07-07 16:15:26,487 [INFO] Бот запускається (мультикористувацький режим)...
+2026-07-07 16:15:26,487 [INFO] Потік моніторингу запущено
+2026-07-07 16:15:26,487 [INFO] Polling запущено
+2026-07-07 16:17:27,497 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:20:34,960 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:26:38,849 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:26:50,416 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:27:01,990 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:27:13,555 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:27:25,114 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:27:36,665 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:27:48,264 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:27:59,823 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:28:11,409 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:28:22,997 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:28:34,561 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:28:46,137 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:28:58,588 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:29:10,138 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:29:21,688 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:29:33,254 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:30:19,496 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:30:42,590 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:30:54,142 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:31:05,740 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:31:17,307 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:31:28,855 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:31:40,412 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:31:51,981 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:32:26,660 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:32:38,226 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:32:49,790 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:33:01,346 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:33:12,918 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:33:24,476 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:33:36,029 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:33:47,591 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:33:59,155 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:34:11,254 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:34:34,385 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:35:44,955 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:36:20,140 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:37:06,401 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:37:17,978 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:37:29,550 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:38:16,337 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:38:27,872 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:39:02,536 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:39:14,109 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:39:48,762 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:40:11,892 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:40:47,050 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:40:58,598 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:41:10,148 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:41:21,696 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:41:33,241 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:43:17,271 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:43:28,821 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:44:15,026 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:44:49,695 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:45:01,248 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:45:12,810 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:45:24,366 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:50:37,429 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:52:33,465 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:52:45,014 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:52:56,625 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:53:08,174 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:53:19,722 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:53:31,297 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:53:42,864 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:53:54,423 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 16:54:06,700 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:18:52,571 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:19:04,117 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:23:53,167 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:25:37,218 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:25:48,768 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:37:00,377 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:37:23,521 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:37:35,094 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:37:46,657 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:37:58,219 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:38:09,852 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:38:10,824 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:52:11,897 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:53:33,297 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:53:44,851 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:53:56,411 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:54:07,982 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:54:19,546 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:54:31,110 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:54:42,667 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:55:06,183 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:55:17,760 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:55:29,699 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:55:41,327 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:55:52,892 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:56:04,469 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:56:16,026 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:56:27,575 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:56:39,152 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:56:51,093 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:57:02,645 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:57:14,187 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 17:57:38,082 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:17:50,977 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:18:03,368 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:18:15,887 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:20:00,953 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:20:12,504 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:20:59,724 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:21:23,220 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:21:34,863 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:21:46,945 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:22:22,665 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:22:34,223 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:23:21,565 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:23:33,181 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:23:44,750 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:37:51,084 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:51:00,852 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:51:12,803 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:51:24,351 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:51:35,909 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:51:47,472 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:51:59,415 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:52:10,986 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:52:22,542 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:54:07,587 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:54:19,150 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:54:29,815 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:54:31,171 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:54:42,770 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:54:54,327 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 18:55:05,883 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:06:43,894 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:06:55,448 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:07:07,013 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:07:31,439 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:07:43,051 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:08:06,174 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:28:10,286 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:28:21,863 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:28:33,774 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:28:45,374 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:29:32,229 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:29:43,875 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:29:55,953 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:30:07,679 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:30:31,039 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:30:42,679 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:30:54,304 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:31:17,662 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:31:29,259 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:32:51,745 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:33:03,406 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:48:23,406 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 19:58:29,359 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:04:06,874 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:04:18,429 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:04:29,977 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:04:53,109 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:05:04,687 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:05:16,252 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:05:27,814 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:06:48,689 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:08:34,026 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:08:45,571 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 20:08:57,130 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:09:08,601 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:09:20,165 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:09:31,717 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:09:43,279 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:09:54,851 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:10:06,464 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:10:18,036 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:10:29,594 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:10:41,159 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:10:52,733 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:11:04,292 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:11:15,850 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:11:27,405 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:12:02,642 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:12:14,195 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:15:54,398 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:16:17,520 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:16:29,091 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:19:12,744 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:19:24,303 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:19:35,895 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:19:47,462 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:19:59,012 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:20:22,165 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:20:33,744 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:21:19,980 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
+2026-07-07 21:21:31,535 [INFO] Binance P2P (BUY): отримано 20 оголошень, жодне не пройшло фільтри (банки/ліміти/бан-лист)
