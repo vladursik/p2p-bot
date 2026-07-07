@@ -151,20 +151,32 @@ session = requests.Session()
 
 FOP_KEYWORDS = ["фоп", " тов ", "тов.", "(тов)"]
 
+# Для цих банків показуємо оголошення лише якщо в описі явно вказано
+# оплату на фізособу (звичайний банківський переказ ігноруємо)
+BANKS_REQUIRE_INDIVIDUAL = {"mono", "abank"}
+INDIVIDUAL_KEYWORDS = [
+    "фіз", "физ.лиц", "физ лиц", "физлиц", "физ. лиц",
+    "приватн", "individual",
+]
+
 # ==================== БАНКИ (per user toggle) ====================
 
 BANK_LABELS = {
-    "mono":   "Monobank",
-    "privat": "ПриватБанк",
-    "abank":  "A-Bank",
+    "mono":    "Monobank",
+    "privat":  "ПриватБанк",
+    "abank":   "A-Bank",
+    "pumb":    "ПУМБ",
+    "ukrgaz":  "Укргазбанк",
 }
 BANK_KEYWORDS = {
-    "mono":   ["monobank", "mono"],
-    "privat": ["privat", "приват"],
-    "abank":  ["a-bank", "abank", "a bank"],
+    "mono":    ["monobank", "mono"],
+    "privat":  ["privat", "приват"],
+    "abank":   ["a-bank", "abank", "a bank"],
+    "pumb":    ["pumb", "пумб", "fuib"],
+    "ukrgaz":  ["ukrgaz", "укргаз"],
 }
-DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True}
-BANK_ORDER = ["mono", "privat", "abank"]
+DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True, "pumb": True, "ukrgaz": True}
+BANK_ORDER = ["mono", "privat", "abank", "pumb", "ukrgaz"]
 
 def get_enabled_banks(ud: dict) -> dict:
     eb = (ud or {}).get("enabled_banks")
@@ -265,6 +277,12 @@ def get_binance_p2p(trade_type: str, user_data: dict):
 
                 if any(word in all_text for word in FOP_KEYWORDS):
                     continue
+
+                # Для Mono/A-Bank додатково: беремо лише оголошення де явно
+                # вказано оплату на фізособу (не ТОВ, не ФОП)
+                if matched_bank in BANKS_REQUIRE_INDIVIDUAL:
+                    if not any(kw in all_text for kw in INDIVIDUAL_KEYWORDS):
+                        continue
 
                 ad_min_limit = float(adv.get("minSingleTransAmount", 0))
                 ad_max_limit = float(
