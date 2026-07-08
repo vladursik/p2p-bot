@@ -309,8 +309,10 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     continue
 
                 # Для Mono/A-Bank додатково: беремо лише оголошення де явно
-                # вказано оплату на фізособу (не ТОВ, не ФОП)
-                if matched_bank in BANKS_REQUIRE_INDIVIDUAL:
+                # вказано оплату на фізособу (не ТОВ, не ФОП).
+                # Ця вимога діє ТІЛЬКИ для SELL (коли платіж приходить нам) —
+                # для BUY жодних додаткових обмежень по банку бути не повинно.
+                if trade_type == "SELL" and matched_bank in BANKS_REQUIRE_INDIVIDUAL:
                     if not any(kw in all_text for kw in INDIVIDUAL_KEYWORDS):
                         continue
 
