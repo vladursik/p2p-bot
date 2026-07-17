@@ -255,6 +255,51 @@ def get_monitor_state(chat_id: int) -> dict:
         }
     return user_monitor_state[chat_id]
 
+# ==================== ДЕТАЛІ ОГОЛОШЕННЯ (реальний remarks) ====================
+#
+# Endpoint пошуку (/adv/search) завжди повертає remarks=null — Binance просто
+# не віддає текст умов мейкера в цьому запиті (перевірено напряму через
+# DevTools, і в браузері, і в боті — однаково null). Реальний текст умов
+# віддається лише окремим запитом по конкретному оголошенню:
+# /bapi/c2c/v2/friendly/c2c/adv/detail-with-advertiser?channel=c2c&advNo=...&area=p2pZone
+#
+# Кешуємо результат на короткий час, щоб не бомбити Binance зайвими запитами —
+# ті самі оголошення часто повторюються між сусідніми перевірками.
+
+ADV_DETAIL_URL   = "https://p2p.binance.com/bapi/c2c/v2/public/c2c/adv/detail-with-advertiser"
+_remarks_cache: dict = {}          # adv_no -> (timestamp, remarks_text)
+_remarks_cache_lock = threading.Lock()
+REMARKS_CACHE_TTL = 90  # секунд
+
+def fetch_adv_remarks(adv_no: str) -> str:
+    if not adv_no:
+        return ""
+
+    now = time.time()
+    with _remarks_cache_lock:
+        cached = _remarks_cache.get(adv_no)
+        if cached and (now - cached[0]) < REMARKS_CACHE_TTL:
+            return cached[1]
+
+    remarks = ""
+    try:
+        r = session.get(
+            ADV_DETAIL_URL,
+            params={"channel": "c2c", "advNo": adv_no, "area": "p2pZone"},
+            timeout=8,
+        )
+        if r.status_code == 200:
+            payload = r.json()
+            remarks = ((payload.get("data") or {}).get("adv") or {}).get("remarks") or ""
+        else:
+            logger.warning(f"detail-with-advertiser HTTP {r.status_code} для advNo={adv_no}")
+    except Exception as e:
+        logger.warning(f"Не вдалось отримати remarks для advNo={adv_no}: {e}")
+
+    with _remarks_cache_lock:
+        _remarks_cache[adv_no] = (now, remarks)
+    return remarks
+
 # ==================== ПАРСИНГ P2P ====================
 
 def get_binance_p2p(trade_type: str, user_data: dict):
@@ -331,8 +376,12 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 if is_blacklisted(chat_id, f"{merchant}::{matched_bank}", trade_type):
                     continue
 
+                # Реальний remarks endpoint /search завжди повертає null —
+                # тягнемо текст умов мейкера окремим (кешованим) запитом.
+                real_remarks = fetch_adv_remarks(adv.get("advNo") or "")
+
                 all_text = normalize_text(" ".join([
-                    (adv.get("remarks") or ""),
+                    real_remarks,
                     pay_methods_text,
                     (adv.get("asset") or ""),
                 ]))
@@ -345,7 +394,7 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 if is_fop and not has_api_tok:
                     logger.info(
                         f"Відсіяно як ФОП: {merchant} ({matched_bank}), "
-                        f"remarks: {(adv.get('remarks') or '')[:120]!r}"
+                        f"remarks: {real_remarks[:120]!r}"
                     )
                     continue
 
@@ -356,6 +405,11 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 # Виняток — той самий API-токен: тоді фізособа не обов'язкова.
                 if trade_type == "SELL" and matched_bank in BANKS_REQUIRE_INDIVIDUAL:
                     if not any(kw in all_text for kw in INDIVIDUAL_KEYWORDS) and not has_api_tok:
+                        logger.info(
+                            f"Відсіяно (не фізособа, немає API-токена/ключа): "
+                            f"{merchant} ({matched_bank}), has_api_tok={has_api_tok}, "
+                            f"remarks: {real_remarks[:150]!r}"
+                        )
                         continue
 
                 ad_min_limit = float(adv.get("minSingleTransAmount", 0))
@@ -399,7 +453,7 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     "adv_no":        adv.get("advNo") or "",
                     "min_limit":     ad_min_limit,
                     "max_limit":     ad_max_limit,
-                    "remarks":       adv.get("remarks", ""),
+                    "remarks":       real_remarks,
                     "orders":        orders,
                     "rate":          rate,
                     "bank":          matched_bank,

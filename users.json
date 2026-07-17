@@ -6,7 +6,7 @@
     "active": true,
     "monitoring": true,
     "registered_at": "2026-05-08T22:36:14.701985",
-    "last_seen": "2026-07-07T23:17:31.405170",
+    "last_seen": "2026-07-18T01:49:37.763670",
     "buy_threshold": 44.0,
     "sell_threshold": 46.9,
     "min_amount_uah": 10000,
@@ -14,7 +14,9 @@
     "check_interval": 10,
     "balance_usdt": 0.0,
     "blacklist_buy": [],
-    "blacklist_sell": [],
+    "blacklist_sell": [
+      "HA6OP_B_KOMAHDY_1::privat"
+    ],
     "sell_card_threshold": 44.6,
     "blacklist_sell_card": [
       "USDTselleer",
