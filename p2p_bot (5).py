@@ -165,6 +165,25 @@ session.headers.update({
     "Origin": "https://p2p.binance.com",
 })
 
+import re
+import unicodedata
+
+def normalize_text(s: str) -> str:
+    """
+    Прибирає невидимі/нульової ширини символи (zero-width space, joiner,
+    RTL/LTR marks тощо) та комбінуючі діакритики, якими іноді "розбивають"
+    слова на кшталт "Ф\u200bО\u200bП", щоб обійти прості текстові фільтри.
+    Після цього нормалізує unicode (NFKC) і приводить до нижнього регістру.
+    """
+    if not s:
+        return ""
+    cleaned = "".join(
+        ch for ch in s
+        if unicodedata.category(ch) not in ("Cf", "Mn")
+    )
+    cleaned = unicodedata.normalize("NFKC", cleaned)
+    return cleaned.lower()
+
 FOP_KEYWORDS = ["фоп", " тов ", "тов.", "(тов)"]
 
 # Для цих банків показуємо оголошення лише якщо в описі явно вказано
@@ -312,11 +331,11 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 if is_blacklisted(chat_id, f"{merchant}::{matched_bank}", trade_type):
                     continue
 
-                all_text = " ".join([
+                all_text = normalize_text(" ".join([
                     (adv.get("remarks") or ""),
                     pay_methods_text,
                     (adv.get("asset") or ""),
-                ]).lower()
+                ]))
 
                 is_fop      = any(word in all_text for word in FOP_KEYWORDS)
                 has_api_tok = any(kw in all_text for kw in API_TOKEN_KEYWORDS)
@@ -324,6 +343,10 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 # ФОП відсікаємо як завжди, АЛЕ якщо в описі є явна інструкція
                 # про створення API-токена monobank — таке оголошення пропускаємо.
                 if is_fop and not has_api_tok:
+                    logger.info(
+                        f"Відсіяно як ФОП: {merchant} ({matched_bank}), "
+                        f"remarks: {(adv.get('remarks') or '')[:120]!r}"
+                    )
                     continue
 
                 # Для Mono/A-Bank додатково: беремо лише оголошення де явно
