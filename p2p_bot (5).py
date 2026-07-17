@@ -176,13 +176,16 @@ INDIVIDUAL_KEYWORDS = [
 ]
 
 # ФОП-оголошення на Mono/A-Bank, де в описі явно пояснюють, як створити
-# API-токен monobank для оплати (типовий текст на кшталт
-# "Створити API-токен (я допоможу на кожному етапі)") — такі оголошення
+# API-токен/API-ключ monobank для оплати (типовий текст на кшталт
+# "Створити API-токен (я допоможу на кожному етапі)" або
+# "Робота ведеться лише через Monobank за API-ключем") — такі оголошення
 # НЕ відсікаємо через FOP-фільтр і фільтр "тільки фізособа", бо оплата
-# все одно йде через токен на карту продавця.
+# все одно йде через токен/ключ на карту продавця.
 API_TOKEN_KEYWORDS = [
     "api-токен", "api токен", "апі-токен", "апі токен",
     "api-token", "api token", "апи-токен", "апи токен",
+    "api-ключ", "api ключ", "апі-ключ", "апі ключ",
+    "апи-ключ", "апи ключ", "api-key", "api key",
 ]
 
 # ==================== БАНКИ (per user toggle) ====================
@@ -443,7 +446,7 @@ def send_alert(chat_id: int, trade_type: str, adv: dict, balance_usdt: float = 0
             profit_text = f"\n💰 Прибуток: {profit_sign}{profit} UAH"
 
     bank_label   = adv.get("bank_label", "")
-    api_tok_text = "\n🔑 ФОП з API-токеном monobank" if adv.get("api_token") else ""
+    api_tok_text = "\n🔑 ФОП з API-токеном/ключем monobank" if adv.get("api_token") else ""
     text = (
         f"{header}\n"
         f"{'─'*22}\n"
