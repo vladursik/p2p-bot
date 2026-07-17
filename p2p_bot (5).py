@@ -175,6 +175,16 @@ INDIVIDUAL_KEYWORDS = [
     "приватн", "individual",
 ]
 
+# ФОП-оголошення на Mono/A-Bank, де в описі явно пояснюють, як створити
+# API-токен monobank для оплати (типовий текст на кшталт
+# "Створити API-токен (я допоможу на кожному етапі)") — такі оголошення
+# НЕ відсікаємо через FOP-фільтр і фільтр "тільки фізособа", бо оплата
+# все одно йде через токен на карту продавця.
+API_TOKEN_KEYWORDS = [
+    "api-токен", "api токен", "апі-токен", "апі токен",
+    "api-token", "api token", "апи-токен", "апи токен",
+]
+
 # ==================== БАНКИ (per user toggle) ====================
 
 BANK_LABELS = {
@@ -305,15 +315,21 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     (adv.get("asset") or ""),
                 ]).lower()
 
-                if any(word in all_text for word in FOP_KEYWORDS):
+                is_fop      = any(word in all_text for word in FOP_KEYWORDS)
+                has_api_tok = any(kw in all_text for kw in API_TOKEN_KEYWORDS)
+
+                # ФОП відсікаємо як завжди, АЛЕ якщо в описі є явна інструкція
+                # про створення API-токена monobank — таке оголошення пропускаємо.
+                if is_fop and not has_api_tok:
                     continue
 
                 # Для Mono/A-Bank додатково: беремо лише оголошення де явно
                 # вказано оплату на фізособу (не ТОВ, не ФОП).
                 # Ця вимога діє ТІЛЬКИ для SELL (коли платіж приходить нам) —
                 # для BUY жодних додаткових обмежень по банку бути не повинно.
+                # Виняток — той самий API-токен: тоді фізособа не обов'язкова.
                 if trade_type == "SELL" and matched_bank in BANKS_REQUIRE_INDIVIDUAL:
-                    if not any(kw in all_text for kw in INDIVIDUAL_KEYWORDS):
+                    if not any(kw in all_text for kw in INDIVIDUAL_KEYWORDS) and not has_api_tok:
                         continue
 
                 ad_min_limit = float(adv.get("minSingleTransAmount", 0))
@@ -362,6 +378,7 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     "rate":          rate,
                     "bank":          matched_bank,
                     "bank_label":    BANK_LABELS[matched_bank],
+                    "api_token":     has_api_tok,
                 })
 
             if not results:
@@ -425,7 +442,8 @@ def send_alert(chat_id: int, trade_type: str, adv: dict, balance_usdt: float = 0
             profit_sign = "+" if profit >= 0 else ""
             profit_text = f"\n💰 Прибуток: {profit_sign}{profit} UAH"
 
-    bank_label = adv.get("bank_label", "")
+    bank_label   = adv.get("bank_label", "")
+    api_tok_text = "\n🔑 ФОП з API-токеном monobank" if adv.get("api_token") else ""
     text = (
         f"{header}\n"
         f"{'─'*22}\n"
@@ -433,6 +451,7 @@ def send_alert(chat_id: int, trade_type: str, adv: dict, balance_usdt: float = 0
         f"👤 {adv['merchant']}\n"
         f"💸 Лімит: {fmt_limit(adv['min_limit'], adv['max_limit'])}\n"
         f"📊 Угод: {adv['orders']} | Успіх: {adv['rate']}%"
+        f"{api_tok_text}"
         f"{profit_text}"
     )
     markup = make_alert_markup(adv["merchant"], trade_type, adv.get("advertiser_no",""), adv.get("adv_no",""), adv.get("bank",""))
