@@ -186,20 +186,17 @@ def normalize_text(s: str) -> str:
 
 FOP_KEYWORDS = ["фоп", " тов ", "тов.", "(тов)"]
 
-# Для цих банків показуємо оголошення лише якщо в описі явно вказано
-# оплату на фізособу (звичайний банківський переказ ігноруємо)
-BANKS_REQUIRE_INDIVIDUAL = {"mono", "abank"}
-INDIVIDUAL_KEYWORDS = [
-    "фіз", "физ.лиц", "физ лиц", "физлиц", "физ. лиц",
-    "приватн", "individual",
-]
+# Тільки для Monobank (на продаж) діє окреме правило: показуємо оголошення
+# лише якщо в описі явно згадано API-токен/ключ monobank. Фільтр
+# "тільки фізособа" прибрано — для Mono тепер єдиний критерій це API.
+BANK_REQUIRES_API = {"mono"}
 
-# ФОП-оголошення на Mono/A-Bank, де в описі явно пояснюють, як створити
-# API-токен/API-ключ monobank для оплати (типовий текст на кшталт
-# "Створити API-токен (я допоможу на кожному етапі)" або
-# "Робота ведеться лише через Monobank за API-ключем") — такі оголошення
-# НЕ відсікаємо через FOP-фільтр і фільтр "тільки фізособа", бо оплата
-# все одно йде через токен/ключ на карту продавця.
+# ФОП-оголошення, де в описі явно пояснюють, як створити API-токен/ключ
+# monobank для оплати (типовий текст на кшталт "Створити API-токен (я
+# допоможу на кожному етапі)" або "Робота ведеться лише через Monobank за
+# API-ключем") — для Monobank такі оголошення показуємо (це і є весь сенс
+# фільтра вище). Для решти банків ФОП/ТОВ фільтр працює як і раніше,
+# без жодних виключень по API.
 API_TOKEN_KEYWORDS = [
     "api-токен", "api токен", "апі-токен", "апі токен",
     "api-token", "api token", "апи-токен", "апи токен",
@@ -215,6 +212,7 @@ BANK_LABELS = {
     "abank":   "A-Bank",
     "pumb":    "ПУМБ",
     "ukrgaz":  "Укргазбанк",
+    "sense":   "Sense Bank",
 }
 BANK_KEYWORDS = {
     "mono":    ["monobank", "mono"],
@@ -222,9 +220,10 @@ BANK_KEYWORDS = {
     "abank":   ["a-bank", "abank", "a bank"],
     "pumb":    ["pumb", "пумб", "fuib"],
     "ukrgaz":  ["ukrgaz", "укргаз"],
+    "sense":   ["sense bank", "sensebank", "sense", "сенс банк", "сенсбанк", "сенс"],
 }
-DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True, "pumb": True, "ukrgaz": True}
-BANK_ORDER = ["mono", "privat", "abank", "pumb", "ukrgaz"]
+DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True, "pumb": True, "ukrgaz": True, "sense": True}
+BANK_ORDER = ["mono", "privat", "abank", "pumb", "ukrgaz", "sense"]
 
 def get_enabled_banks(ud: dict) -> dict:
     eb = (ud or {}).get("enabled_banks")
@@ -367,8 +366,8 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 if not matched_banks:
                     continue
 
-                # Пріоритет — банку БЕЗ обмеження "тільки фізособа", якщо такий є серед збігів
-                unrestricted = [b for b in matched_banks if b not in BANKS_REQUIRE_INDIVIDUAL]
+                # Пріоритет — банку БЕЗ спецправила по API (Monobank), якщо такий є серед збігів
+                unrestricted = [b for b in matched_banks if b not in BANK_REQUIRES_API]
                 matched_bank = unrestricted[0] if unrestricted else matched_banks[0]
 
                 # Бан прив'язаний до пари мерчант+банк, а не до мерчанта повністю —
@@ -389,26 +388,21 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 is_fop      = any(word in all_text for word in FOP_KEYWORDS)
                 has_api_tok = any(kw in all_text for kw in API_TOKEN_KEYWORDS)
 
-                # ФОП відсікаємо як завжди, АЛЕ якщо в описі є явна інструкція
-                # про створення API-токена monobank — таке оголошення пропускаємо.
-                if is_fop and not has_api_tok:
-                    logger.info(
-                        f"Відсіяно як ФОП: {merchant} ({matched_bank}), "
-                        f"remarks: {real_remarks[:120]!r}"
-                    )
-                    continue
-
-                # Для Mono/A-Bank додатково: беремо лише оголошення де явно
-                # вказано оплату на фізособу (не ТОВ, не ФОП).
-                # Ця вимога діє ТІЛЬКИ для SELL (коли платіж приходить нам) —
-                # для BUY жодних додаткових обмежень по банку бути не повинно.
-                # Виняток — той самий API-токен: тоді фізособа не обов'язкова.
-                if trade_type == "SELL" and matched_bank in BANKS_REQUIRE_INDIVIDUAL:
-                    if not any(kw in all_text for kw in INDIVIDUAL_KEYWORDS) and not has_api_tok:
+                if trade_type == "SELL" and matched_bank in BANK_REQUIRES_API:
+                    # Monobank на продаж: єдиний критерій — явна згадка API-токена/ключа.
+                    # ФОП/ТОВ і "тільки фізособа" тут більше не перевіряються окремо.
+                    if not has_api_tok:
                         logger.info(
-                            f"Відсіяно (не фізособа, немає API-токена/ключа): "
-                            f"{merchant} ({matched_bank}), has_api_tok={has_api_tok}, "
-                            f"remarks: {real_remarks[:150]!r}"
+                            f"Відсіяно (Monobank без згадки API-токена/ключа): "
+                            f"{merchant}, remarks: {real_remarks[:150]!r}"
+                        )
+                        continue
+                else:
+                    # Для решти банків (і Monobank на BUY) — як і раніше відсікаємо ФОП/ТОВ.
+                    if is_fop:
+                        logger.info(
+                            f"Відсіяно як ФОП: {merchant} ({matched_bank}), "
+                            f"remarks: {real_remarks[:120]!r}"
                         )
                         continue
 
