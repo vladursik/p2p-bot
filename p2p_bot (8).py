@@ -70,6 +70,7 @@ def default_user_data(chat_id: int, username: str = "", first_name: str = "") ->
         "sell_threshold":  45.90,
         "min_amount_uah":  20000,
         "min_amount_sell": 20000,
+        "min_amount_sell_paysend": 20000,
         "check_interval":  20,
         "balance_usdt":    0.0,
         "blacklist_buy":  [],
@@ -213,6 +214,7 @@ BANK_LABELS = {
     "pumb":    "ПУМБ",
     "ukrgaz":  "Укргазбанк",
     "sense":   "Sense Bank",
+    "paysend": "PaySend",
 }
 BANK_KEYWORDS = {
     "mono":    ["monobank", "mono"],
@@ -221,9 +223,14 @@ BANK_KEYWORDS = {
     "pumb":    ["pumb", "пумб", "fuib"],
     "ukrgaz":  ["ukrgaz", "укргаз"],
     "sense":   ["sense bank", "sensebank", "sense", "сенс банк", "сенсбанк", "сенс"],
+    # PaySend майже ніколи не приходить як окремий tradeMethod — мейкери
+    # зазвичай прописують його прямо в умовах оголошення (remarks), а як
+    # спосіб оплати в Binance може стояти карта іншого банку (Privat тощо).
+    # Тому ці ключові слова шукаються і в тексті умов, див. get_binance_p2p.
+    "paysend": ["paysend", "pay send", "пейсенд", "пэйсенд", "пайсенд", "пэй сенд", "пей сенд"],
 }
-DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True, "pumb": True, "ukrgaz": True, "sense": True}
-BANK_ORDER = ["mono", "privat", "abank", "pumb", "ukrgaz", "sense"]
+DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True, "pumb": True, "ukrgaz": True, "sense": True, "paysend": True}
+BANK_ORDER = ["mono", "privat", "abank", "pumb", "ukrgaz", "sense", "paysend"]
 
 def get_enabled_banks(ud: dict) -> dict:
     eb = (ud or {}).get("enabled_banks")
@@ -352,6 +359,13 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     (m.get("tradeMethodName") or "") for m in adv.get("tradeMethods", [])
                 ).lower()
 
+                # Реальний remarks endpoint /search завжди повертає null —
+                # тягнемо текст умов мейкера окремим (кешованим) запитом.
+                # Тягнемо його ще ДО визначення банку, бо PaySend зазвичай
+                # не приходить як tradeMethod, а прописаний саме тут.
+                real_remarks = fetch_adv_remarks(adv.get("advNo") or "")
+                remarks_lower = real_remarks.lower()
+
                 # Показуємо тільки оголошення з банками, увімкненими у користувача.
                 # Збираємо ВСІ банки, що збіглися (а не лише перший по порядку) —
                 # інакше оголошення з кількома методами оплати (напр. Укргазбанк + A-Bank)
@@ -361,23 +375,29 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                 for bank_key in BANK_ORDER:
                     if not enabled_banks.get(bank_key, True):
                         continue
-                    if any(kw in pay_methods_text for kw in BANK_KEYWORDS[bank_key]):
+                    # PaySend шукаємо і в способах оплати, і в умовах ордера —
+                    # решту банків, як і раніше, тільки в способах оплати.
+                    haystack = (pay_methods_text + " " + remarks_lower) if bank_key == "paysend" else pay_methods_text
+                    if any(kw in haystack for kw in BANK_KEYWORDS[bank_key]):
                         matched_banks.append(bank_key)
                 if not matched_banks:
                     continue
 
-                # Пріоритет — банку БЕЗ спецправила по API (Monobank), якщо такий є серед збігів
-                unrestricted = [b for b in matched_banks if b not in BANK_REQUIRES_API]
-                matched_bank = unrestricted[0] if unrestricted else matched_banks[0]
+                # Пріоритет — PaySend, якщо він серед збігів: якщо в умовах
+                # ордера прямо згадано PaySend, це і є реальний спосіб
+                # оплати, навіть якщо Binance показує карту іншого банку
+                # (Privat/тощо) як tradeMethod. Інакше — банк БЕЗ
+                # спецправила по API (Monobank), якщо такий є серед збігів.
+                if "paysend" in matched_banks:
+                    matched_bank = "paysend"
+                else:
+                    unrestricted = [b for b in matched_banks if b not in BANK_REQUIRES_API]
+                    matched_bank = unrestricted[0] if unrestricted else matched_banks[0]
 
                 # Бан прив'язаний до пари мерчант+банк, а не до мерчанта повністю —
                 # забанивши оголошення на Mono, не втрачаємо його ж оголошення на Privat
                 if is_blacklisted(chat_id, f"{merchant}::{matched_bank}", trade_type):
                     continue
-
-                # Реальний remarks endpoint /search завжди повертає null —
-                # тягнемо текст умов мейкера окремим (кешованим) запитом.
-                real_remarks = fetch_adv_remarks(adv.get("advNo") or "")
 
                 all_text = normalize_text(" ".join([
                     real_remarks,
@@ -413,8 +433,14 @@ def get_binance_p2p(trade_type: str, user_data: dict):
                     or 0
                 )
 
-                # Фільтр по мінімальній сумі користувача
-                if ad_max_limit > 0 and ad_max_limit < my_amount:
+                # Фільтр по мінімальній сумі користувача.
+                # Для PaySend на продаж — окремий поріг суми, якщо задано.
+                if trade_type == "SELL" and matched_bank == "paysend":
+                    my_amount_for_ad = user_data.get("min_amount_sell_paysend", my_amount)
+                else:
+                    my_amount_for_ad = my_amount
+
+                if ad_max_limit > 0 and ad_max_limit < my_amount_for_ad:
                     continue
 
                 # ✅ НОВИЙ ФІЛЬТР: якщо є баланс USDT — перевіряємо чи влізе вся сума
@@ -644,6 +670,7 @@ def send_main_menu(chat_id: int):
     markup.add(types.KeyboardButton(status_btn),            types.KeyboardButton("📊 Монітор зараз"))
     markup.add(types.KeyboardButton("📉 Поріг покупки"),    types.KeyboardButton("📈 Поріг продажу"))
     markup.add(types.KeyboardButton("💰 Моя сума BUY"),     types.KeyboardButton("💰 Моя сума SELL"))
+    markup.add(types.KeyboardButton("💰 Сума SELL Paysend"))
     markup.add(types.KeyboardButton("💎 Баланс USDT"),      types.KeyboardButton("⏱ Інтервал"))
     markup.add(types.KeyboardButton("🚫 Блеклист BUY"),     types.KeyboardButton("🚫 Блеклист SELL"))
     markup.add(types.KeyboardButton("🏦 Банки"),            types.KeyboardButton("📋 Статус"))
@@ -664,6 +691,7 @@ def send_main_menu(chat_id: int):
         f"🔴 Продаж від: {ud['sell_threshold']} ₴\n"
         f"💵 Моя сума BUY: {ud['min_amount_uah']} UAH\n"
         f"💵 Моя сума SELL: {ud['min_amount_sell']} UAH\n"
+        f"💵 Сума SELL Paysend: {ud.get('min_amount_sell_paysend', ud['min_amount_sell'])} UAH\n"
         f"💎 Баланс USDT: {balance_text}\n"
         f"⏱ Інтервал: {ud['check_interval']} сек\n"
         f"🏦 Банки: {banks_text}",
@@ -729,6 +757,7 @@ def handle_admin_user(call):
         f"🔴 SELL поріг: {u['sell_threshold']} ₴\n"
         f"💵 Сума BUY: {u['min_amount_uah']} UAH\n"
         f"💵 Сума SELL: {u['min_amount_sell']} UAH\n"
+        f"💵 Сума SELL Paysend: {u.get('min_amount_sell_paysend', u['min_amount_sell'])} UAH\n"
         f"🚫 Блеклист BUY: {len(u.get('blacklist_buy', []))}\n"
         f"🚫 Блеклист SELL: {len(u.get('blacklist_sell', []))}\n"
         f"📅 Реєстрація: {u.get('registered_at','')[:10]}"
@@ -977,6 +1006,9 @@ def update_val(m, param):
         elif param == "min_sell":
             update_user_field(cid, "min_amount_sell", int(v))
             bot.send_message(cid, f"✅ Мін. сума SELL: {int(v)} UAH")
+        elif param == "min_sell_paysend":
+            update_user_field(cid, "min_amount_sell_paysend", int(v))
+            bot.send_message(cid, f"✅ Мін. сума SELL Paysend: {int(v)} UAH")
         elif param == "balance":
             update_user_field(cid, "balance_usdt", v)
             if v == 0:
@@ -1060,7 +1092,7 @@ def _handle(message, text):
     known = [
         "▶️ Запустити", "⏹ Зупинити", "📊 Монітор зараз",
         "📋 Статус", "📉 Поріг покупки", "📈 Поріг продажу",
-        "💰 Моя сума BUY", "💰 Моя сума SELL", "💎 Баланс USDT",
+        "💰 Моя сума BUY", "💰 Моя сума SELL", "💰 Сума SELL Paysend", "💎 Баланс USDT",
         "⏱ Інтервал", "🚫 Блеклист BUY", "🚫 Блеклист SELL",
         "🏦 Банки", "👥 Адмін панель"
     ]
@@ -1144,6 +1176,7 @@ def _handle(message, text):
             f"🔴 Поріг продажу: {ud_fresh['sell_threshold']} ₴\n"
             f"💵 Сума BUY: {ud_fresh['min_amount_uah']} UAH\n"
             f"💵 Сума SELL: {ud_fresh['min_amount_sell']} UAH\n"
+            f"💵 Сума SELL Paysend: {ud_fresh.get('min_amount_sell_paysend', ud_fresh['min_amount_sell'])} UAH\n"
             f"💎 Баланс USDT: {balance_text}\n"
             f"🏦 Банки: {banks_text}\n"
             f"🚫 Блеклист BUY: {bl_buy} мерчантів\n"
@@ -1174,6 +1207,14 @@ def _handle(message, text):
         ud_fresh = get_user(cid)
         msg = bot.send_message(cid, f"💵 Моя сума SELL: {ud_fresh['min_amount_sell']} UAH\nВведи суму:")
         bot.register_next_step_handler(msg, lambda m: update_val(m, "min_sell"))
+
+    elif text == "💰 Сума SELL Paysend":
+        ud_fresh = get_user(cid)
+        cur = ud_fresh.get("min_amount_sell_paysend", ud_fresh["min_amount_sell"])
+        msg = bot.send_message(cid,
+            f"💵 Сума SELL Paysend: {cur} UAH\n"
+            f"Введи суму (діє тільки для ордерів, де в умовах/оплаті згадано Paysend):")
+        bot.register_next_step_handler(msg, lambda m: update_val(m, "min_sell_paysend"))
 
     elif text == "💎 Баланс USDT":
         ud_fresh = get_user(cid)

@@ -4,16 +4,19 @@
     "username": "ursvlad",
     "first_name": "Влад",
     "active": true,
-    "monitoring": true,
+    "monitoring": false,
     "registered_at": "2026-05-08T22:36:14.701985",
-    "last_seen": "2026-07-18T01:49:37.763670",
+    "last_seen": "2026-07-21T02:39:17.134554",
     "buy_threshold": 44.0,
-    "sell_threshold": 46.9,
-    "min_amount_uah": 10000,
+    "sell_threshold": 46.5,
+    "min_amount_uah": 5000,
     "min_amount_sell": 20000,
     "check_interval": 10,
     "balance_usdt": 0.0,
-    "blacklist_buy": [],
+    "blacklist_buy": [
+      "Durace1l::mono",
+      "BlackCardinal7007::privat"
+    ],
     "blacklist_sell": [
       "HA6OP_B_KOMAHDY_1::privat"
     ],
@@ -38,7 +41,15 @@
     "bybit_buy_threshold": 41.0,
     "bybit_sell_threshold": 45.3,
     "whitelist_buy": [],
-    "whitelist_sell": []
+    "whitelist_sell": [],
+    "enabled_banks": {
+      "mono": true,
+      "privat": true,
+      "abank": false,
+      "pumb": true,
+      "ukrgaz": false,
+      "sense": true
+    }
   },
   "6477920477": {
     "chat_id": 6477920477,
