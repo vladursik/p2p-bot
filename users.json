@@ -1,16 +1,16 @@
 {
   "273656279": {
     "chat_id": 273656279,
-    "username": "ursvlad",
-    "first_name": "Влад",
+    "username": "xxxmsip",
+    "first_name": ".",
     "active": true,
-    "monitoring": false,
+    "monitoring": true,
     "registered_at": "2026-05-08T22:36:14.701985",
-    "last_seen": "2026-07-21T02:39:17.134554",
+    "last_seen": "2026-09-10T20:59:12.264171",
     "buy_threshold": 44.0,
-    "sell_threshold": 46.5,
+    "sell_threshold": 47.0,
     "min_amount_uah": 5000,
-    "min_amount_sell": 20000,
+    "min_amount_sell": 5000,
     "check_interval": 10,
     "balance_usdt": 0.0,
     "blacklist_buy": [
@@ -18,7 +18,14 @@
       "BlackCardinal7007::privat"
     ],
     "blacklist_sell": [
-      "HA6OP_B_KOMAHDY_1::privat"
+      "HA6OP_B_KOMAHDY_1::privat",
+      "Ka1ips0::privat",
+      "unreleased8181::privat",
+      "P2P-151f96gp::privat",
+      "unreleased8181::pumb",
+      "P2P-151f96gp::pumb",
+      "HA6OP_B_KOMAHDY_107::privat",
+      "Tg-ObminOdessa::privat"
     ],
     "sell_card_threshold": 44.6,
     "blacklist_sell_card": [
@@ -44,12 +51,15 @@
     "whitelist_sell": [],
     "enabled_banks": {
       "mono": true,
-      "privat": true,
+      "privat": false,
       "abank": false,
-      "pumb": true,
+      "pumb": false,
       "ukrgaz": false,
-      "sense": true
-    }
+      "sense": false,
+      "paysend": true
+    },
+    "min_amount_sell_paysend": 200,
+    "czk_spread_threshold": 2.0
   },
   "6477920477": {
     "chat_id": 6477920477,
@@ -73,9 +83,9 @@
     "username": "emchenkoss",
     "first_name": "emchenkoss",
     "active": true,
-    "monitoring": false,
+    "monitoring": true,
     "registered_at": "2026-05-08T22:41:24.872094",
-    "last_seen": "2026-07-07T15:13:55.437447",
+    "last_seen": "2026-09-08T17:28:08.702390",
     "buy_threshold": 44.0,
     "sell_threshold": 46.5,
     "min_amount_uah": 70989898676,
@@ -84,8 +94,18 @@
     "balance_usdt": 1200.0,
     "blacklist_buy": [],
     "blacklist_sell": [
-      "richpiana"
-    ]
+      "richpiana",
+      "luvv66::mono"
+    ],
+    "enabled_banks": {
+      "mono": true,
+      "privat": false,
+      "abank": false,
+      "pumb": false,
+      "ukrgaz": false,
+      "sense": false,
+      "paysend": true
+    }
   },
   "848630979": {
     "chat_id": 848630979,

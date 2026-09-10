@@ -5,6 +5,7 @@ import threading
 import logging
 import requests
 import telebot
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from telebot import types
 from collections import deque
 from datetime import datetime
@@ -73,6 +74,7 @@ def default_user_data(chat_id: int, username: str = "", first_name: str = "") ->
         "min_amount_sell_paysend": 20000,
         "check_interval":  20,
         "balance_usdt":    0.0,
+        "czk_spread_threshold": 2.5,
         "blacklist_buy":  [],
         "blacklist_sell": [],
         "enabled_banks":  dict(DEFAULT_ENABLED_BANKS),
@@ -250,6 +252,10 @@ start_time  = datetime.now()
 HISTORY_MAXLEN = 540
 price_history  = deque(maxlen=HISTORY_MAXLEN)
 
+CZK_CHECK_INTERVAL = 60          # сек між перевірками спреду CZK
+czk_alert_lock   = threading.Lock()
+czk_alert_active = False         # щоб не слати алерт на кожній ітерації, а лише при перетині порогу
+
 user_monitor_state: dict = {}
 
 def get_monitor_state(chat_id: int) -> dict:
@@ -308,22 +314,20 @@ def fetch_adv_remarks(adv_no: str) -> str:
 
 # ==================== ПАРСИНГ P2P ====================
 
-def get_binance_p2p(trade_type: str, user_data: dict):
-    url = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
+PAGES_TO_FETCH = 8   # верхня межа "про всяк випадок" — реально зупиняється раніше, щойно сторінка неповна/пуста
+ROWS_PER_PAGE   = 20  # максимум, який приймає /adv/search за одну сторінку
+PAGE_FETCH_WORKERS = 5  # скільки сторінок тягнути одночасно (паралельно)
+
+def _fetch_binance_page(url: str, trade_type: str, page: int):
+    """Тягне одну сторінку оголошень. Повертає (list_or_None, page_was_empty)."""
     data = {
         "asset": "USDT",
         "fiat": "UAH",
         "merchantCheck": False,
-        "page": 1, "rows": 20,
+        "page": page, "rows": ROWS_PER_PAGE,
         "payTypes": [],  # пусто = забираємо ВСІ методи оплати, фільтруємо самі нижче
         "tradeType": trade_type,
     }
-
-    enabled_banks = get_enabled_banks(user_data)
-
-    chat_id   = user_data["chat_id"]
-    my_amount = user_data["min_amount_sell"] if trade_type == "SELL" else user_data["min_amount_uah"]
-    balance_usdt = user_data.get("balance_usdt", 0)
 
     for attempt in range(MAX_RETRIES):
         try:
@@ -331,182 +335,368 @@ def get_binance_p2p(trade_type: str, user_data: dict):
 
             if r.status_code == 429:
                 wait = RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
-                logger.warning(f"Rate limit Binance P2P ({trade_type}), чекаю {wait}с")
+                logger.warning(f"Rate limit Binance P2P ({trade_type}, стор.{page}), чекаю {wait}с")
                 time.sleep(wait)
                 continue
 
             if r.status_code != 200:
                 logger.warning(
-                    f"Binance P2P HTTP {r.status_code} ({trade_type}), "
+                    f"Binance P2P HTTP {r.status_code} ({trade_type}, стор.{page}), "
                     f"body: {r.text[:300]!r}"
                 )
             r.raise_for_status()
             resp = r.json()
 
             if not resp or not resp.get("data"):
-                logger.info(f"Binance P2P: порожня відповідь ({trade_type}): {str(resp)[:300]}")
-                return []  # запит успішний, просто немає оголошень — це не падіння API
+                return [], True  # запит успішний, просто немає (більше) оголошень на цій сторінці
 
-            results = []
-            for item in resp["data"]:
-                adv  = item["adv"]
-                user = item["advertiser"]
-
-                price    = float(adv["price"])
-                merchant = user["nickName"]
-
-                pay_methods_text = " ".join(
-                    (m.get("tradeMethodName") or "") for m in adv.get("tradeMethods", [])
-                ).lower()
-
-                # Реальний remarks endpoint /search завжди повертає null —
-                # тягнемо текст умов мейкера окремим (кешованим) запитом.
-                # Тягнемо його ще ДО визначення банку, бо PaySend зазвичай
-                # не приходить як tradeMethod, а прописаний саме тут.
-                real_remarks = fetch_adv_remarks(adv.get("advNo") or "")
-                remarks_lower = real_remarks.lower()
-
-                # Показуємо тільки оголошення з банками, увімкненими у користувача.
-                # Збираємо ВСІ банки, що збіглися (а не лише перший по порядку) —
-                # інакше оголошення з кількома методами оплати (напр. Укргазбанк + A-Bank)
-                # неправильно потрапляє під обмеження "тільки фізособа" через A-Bank,
-                # хоча по Укргазбанку воно мало б пройти без обмежень.
-                matched_banks = []
-                for bank_key in BANK_ORDER:
-                    if not enabled_banks.get(bank_key, True):
-                        continue
-                    # PaySend шукаємо і в способах оплати, і в умовах ордера —
-                    # решту банків, як і раніше, тільки в способах оплати.
-                    haystack = (pay_methods_text + " " + remarks_lower) if bank_key == "paysend" else pay_methods_text
-                    if any(kw in haystack for kw in BANK_KEYWORDS[bank_key]):
-                        matched_banks.append(bank_key)
-                if not matched_banks:
-                    continue
-
-                # Пріоритет — PaySend, якщо він серед збігів: якщо в умовах
-                # ордера прямо згадано PaySend, це і є реальний спосіб
-                # оплати, навіть якщо Binance показує карту іншого банку
-                # (Privat/тощо) як tradeMethod. Інакше — банк БЕЗ
-                # спецправила по API (Monobank), якщо такий є серед збігів.
-                if "paysend" in matched_banks:
-                    matched_bank = "paysend"
-                else:
-                    unrestricted = [b for b in matched_banks if b not in BANK_REQUIRES_API]
-                    matched_bank = unrestricted[0] if unrestricted else matched_banks[0]
-
-                # Бан прив'язаний до пари мерчант+банк, а не до мерчанта повністю —
-                # забанивши оголошення на Mono, не втрачаємо його ж оголошення на Privat
-                if is_blacklisted(chat_id, f"{merchant}::{matched_bank}", trade_type):
-                    continue
-
-                all_text = normalize_text(" ".join([
-                    real_remarks,
-                    pay_methods_text,
-                    (adv.get("asset") or ""),
-                ]))
-
-                is_fop      = any(word in all_text for word in FOP_KEYWORDS)
-                has_api_tok = any(kw in all_text for kw in API_TOKEN_KEYWORDS)
-
-                if trade_type == "SELL" and matched_bank in BANK_REQUIRES_API:
-                    # Monobank на продаж: єдиний критерій — явна згадка API-токена/ключа.
-                    # ФОП/ТОВ і "тільки фізособа" тут більше не перевіряються окремо.
-                    if not has_api_tok:
-                        logger.info(
-                            f"Відсіяно (Monobank без згадки API-токена/ключа): "
-                            f"{merchant}, remarks: {real_remarks[:150]!r}"
-                        )
-                        continue
-                else:
-                    # Для решти банків (і Monobank на BUY) — як і раніше відсікаємо ФОП/ТОВ.
-                    if is_fop:
-                        logger.info(
-                            f"Відсіяно як ФОП: {merchant} ({matched_bank}), "
-                            f"remarks: {real_remarks[:120]!r}"
-                        )
-                        continue
-
-                ad_min_limit = float(adv.get("minSingleTransAmount", 0))
-                ad_max_limit = float(
-                    adv.get("maxSingleTransAmount")
-                    or adv.get("dynamicMaxSingleTransAmount")
-                    or 0
-                )
-
-                # Фільтр по мінімальній сумі користувача.
-                # Для PaySend на продаж — окремий поріг суми, якщо задано.
-                if trade_type == "SELL" and matched_bank == "paysend":
-                    my_amount_for_ad = user_data.get("min_amount_sell_paysend", my_amount)
-                else:
-                    my_amount_for_ad = my_amount
-
-                if ad_max_limit > 0 and ad_max_limit < my_amount_for_ad:
-                    continue
-
-                # ✅ НОВИЙ ФІЛЬТР: якщо є баланс USDT — перевіряємо чи влізе вся сума
-                if balance_usdt > 0 and trade_type == "SELL":
-                    my_usdt_in_uah = balance_usdt * price
-                    if ad_max_limit > 0 and ad_max_limit < my_usdt_in_uah:
-                        continue
-
-                stats  = user.get("userStatsRet") or user.get("userStat") or {}
-                orders = (
-                    user.get("monthOrderCount")
-                    or user.get("orderCount")
-                    or stats.get("completedOrderNum")
-                    or stats.get("recentOrderNum")
-                    or 0
-                )
-                rate_raw = (
-                    user.get("monthFinishRate")
-                    or user.get("positiveRate")
-                    or stats.get("completionRate")
-                    or stats.get("recentExecuteRate")
-                    or 0
-                )
-                rate = round(float(rate_raw) * 100, 1) if float(rate_raw) <= 1 else round(float(rate_raw), 1)
-
-                results.append({
-                    "price":         price,
-                    "merchant":      merchant,
-                    "advertiser_no": user.get("userNo") or user.get("advertiserNo") or "",
-                    "adv_no":        adv.get("advNo") or "",
-                    "min_limit":     ad_min_limit,
-                    "max_limit":     ad_max_limit,
-                    "remarks":       real_remarks,
-                    "orders":        orders,
-                    "rate":          rate,
-                    "bank":          matched_bank,
-                    "bank_label":    BANK_LABELS[matched_bank],
-                    "api_token":     has_api_tok,
-                })
-
-            if not results:
-                logger.info(
-                    f"Binance P2P ({trade_type}): отримано {len(resp['data'])} оголошень, "
-                    f"жодне не пройшло фільтри (банки/ліміти/бан-лист)"
-                )
-                return []  # жодне оголошення не пройшло фільтри — API живий, просто зараз нічого підходящого
-
-            results.sort(key=lambda x: x["price"], reverse=(trade_type == "SELL"))
-            return results
+            return resp["data"], False
 
         except requests.exceptions.Timeout:
-            logger.warning(f"Таймаут ({trade_type}), спроба {attempt+1}/{MAX_RETRIES}")
+            logger.warning(f"Таймаут ({trade_type}, стор.{page}), спроба {attempt+1}/{MAX_RETRIES}")
         except requests.exceptions.ConnectionError:
-            logger.warning(f"Нема з'єднання ({trade_type}), спроба {attempt+1}/{MAX_RETRIES}")
+            logger.warning(f"Нема з'єднання ({trade_type}, стор.{page}), спроба {attempt+1}/{MAX_RETRIES}")
         except Exception as e:
-            logger.error(f"Помилка P2P ({trade_type}): {e}", exc_info=True)
+            logger.error(f"Помилка P2P ({trade_type}, стор.{page}): {e}", exc_info=True)
 
         if attempt < MAX_RETRIES - 1:
             time.sleep(RETRY_DELAYS[attempt])
 
-    return None
+    return None, False  # усі спроби на цю сторінку провалились
+
+
+def get_binance_p2p(trade_type: str, user_data: dict):
+    url = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
+
+    enabled_banks = get_enabled_banks(user_data)
+
+    chat_id   = user_data["chat_id"]
+    my_amount = user_data["min_amount_sell"] if trade_type == "SELL" else user_data["min_amount_uah"]
+    balance_usdt = user_data.get("balance_usdt", 0)
+
+    # ---- Збираємо оголошення з кількох сторінок паралельно (швидше, ніж по черзі) ----
+    raw_items = []
+    seen_adv_no = set()
+    any_page_ok = False
+
+    page_results = {}  # page_num -> (items_or_None, was_empty)
+    with ThreadPoolExecutor(max_workers=PAGE_FETCH_WORKERS) as pool:
+        futures = {
+            pool.submit(_fetch_binance_page, url, trade_type, page): page
+            for page in range(1, PAGES_TO_FETCH + 1)
+        }
+        for fut in as_completed(futures):
+            page = futures[fut]
+            try:
+                page_results[page] = fut.result()
+            except Exception as e:
+                logger.error(f"Помилка отримання сторінки {page} ({trade_type}): {e}", exc_info=True)
+                page_results[page] = (None, False)
+
+    # Обробляємо результати СТРОГО по порядку сторінок: щойно якась сторінка
+    # виявилась неповною/пустою — далі не враховуємо (там більше нічого немає).
+    for page in range(1, PAGES_TO_FETCH + 1):
+        page_items, was_empty = page_results.get(page, (None, False))
+
+        if page_items is None:
+            logger.warning(f"Сторінку {page} ({trade_type}) не вдалось отримати, пропускаю")
+            continue
+
+        any_page_ok = True
+
+        if was_empty or not page_items:
+            break
+
+        for it in page_items:
+            adv_no = (it.get("adv") or {}).get("advNo") or ""
+            if adv_no and adv_no in seen_adv_no:
+                continue
+            if adv_no:
+                seen_adv_no.add(adv_no)
+            raw_items.append(it)
+
+        if len(page_items) < ROWS_PER_PAGE:
+            break
+
+    if not any_page_ok:
+        return None  # жодна сторінка не відповіла — вважаємо, що API впав
+
+    if not raw_items:
+        logger.info(f"Binance P2P: порожня відповідь ({trade_type})")
+        return []  # запити успішні, просто немає оголошень — це не падіння API
+
+    # ---- Тягнемо "умови угоди" (remarks) для ВСІХ оголошень одразу і паралельно ----
+    # (замість того, щоб робити це по черзі всередині циклу фільтрації нижче —
+    # саме це раніше й було головною причиною довгого очікування "поточних цін")
+    adv_nos = [(it.get("adv") or {}).get("advNo") or "" for it in raw_items]
+    adv_nos = [a for a in adv_nos if a]
+    if adv_nos:
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            futures = {pool.submit(fetch_adv_remarks, a): a for a in adv_nos}
+            for fut in as_completed(futures):
+                try:
+                    fut.result()  # результат сам кешується всередині fetch_adv_remarks
+                except Exception as e:
+                    logger.warning(f"Помилка паралельного fetch_adv_remarks: {e}")
+
+    try:
+        results = []
+        for item in raw_items:
+            adv  = item["adv"]
+            user = item["advertiser"]
+
+            price    = float(adv["price"])
+            merchant = user["nickName"]
+
+            pay_methods_text = " ".join(
+                (m.get("tradeMethodName") or "") for m in adv.get("tradeMethods", [])
+            ).lower()
+
+            # Реальний remarks endpoint /search завжди повертає null —
+            # тягнемо текст умов мейкера окремим (кешованим) запитом.
+            # Тягнемо його ще ДО визначення банку, бо PaySend зазвичай
+            # не приходить як tradeMethod, а прописаний саме тут.
+            real_remarks = fetch_adv_remarks(adv.get("advNo") or "")
+            remarks_lower = real_remarks.lower()
+
+            # Показуємо тільки оголошення з банками, увімкненими у користувача.
+            # Збираємо ВСІ банки, що збіглися (а не лише перший по порядку) —
+            # інакше оголошення з кількома методами оплати (напр. Укргазбанк + A-Bank)
+            # неправильно потрапляє під обмеження "тільки фізособа" через A-Bank,
+            # хоча по Укргазбанку воно мало б пройти без обмежень.
+            matched_banks = []
+            for bank_key in BANK_ORDER:
+                if not enabled_banks.get(bank_key, True):
+                    continue
+                # PaySend шукаємо і в способах оплати, і в умовах ордера —
+                # решту банків, як і раніше, тільки в способах оплати.
+                haystack = (pay_methods_text + " " + remarks_lower) if bank_key == "paysend" else pay_methods_text
+                if any(kw in haystack for kw in BANK_KEYWORDS[bank_key]):
+                    matched_banks.append(bank_key)
+            if not matched_banks:
+                logger.debug(
+                    f"Відсіяно (банк не розпізнано/вимкнено): {merchant}, "
+                    f"спосіб оплати: {pay_methods_text[:80]!r}"
+                )
+                continue
+
+            # Пріоритет — PaySend, якщо він серед збігів: якщо в умовах
+            # ордера прямо згадано PaySend, це і є реальний спосіб
+            # оплати, навіть якщо Binance показує карту іншого банку
+            # (Privat/тощо) як tradeMethod. Інакше — банк БЕЗ
+            # спецправила по API (Monobank), якщо такий є серед збігів.
+            if "paysend" in matched_banks:
+                matched_bank = "paysend"
+            else:
+                unrestricted = [b for b in matched_banks if b not in BANK_REQUIRES_API]
+                matched_bank = unrestricted[0] if unrestricted else matched_banks[0]
+
+            # Бан прив'язаний до пари мерчант+банк, а не до мерчанта повністю —
+            # забанивши оголошення на Mono, не втрачаємо його ж оголошення на Privat
+            if is_blacklisted(chat_id, f"{merchant}::{matched_bank}", trade_type):
+                continue
+
+            all_text = normalize_text(" ".join([
+                real_remarks,
+                pay_methods_text,
+                (adv.get("asset") or ""),
+            ]))
+
+            is_fop      = any(word in all_text for word in FOP_KEYWORDS)
+            has_api_tok = any(kw in all_text for kw in API_TOKEN_KEYWORDS)
+
+            if trade_type == "SELL" and matched_bank in BANK_REQUIRES_API:
+                # Monobank на продаж: єдиний критерій — явна згадка API-токена/ключа.
+                # ФОП/ТОВ і "тільки фізособа" тут більше не перевіряються окремо.
+                if not has_api_tok:
+                    logger.info(
+                        f"Відсіяно (Monobank без згадки API-токена/ключа): "
+                        f"{merchant}, remarks: {real_remarks[:150]!r}"
+                    )
+                    continue
+            else:
+                # Для решти банків (і Monobank на BUY) — як і раніше відсікаємо ФОП/ТОВ.
+                if is_fop:
+                    logger.info(
+                        f"Відсіяно як ФОП: {merchant} ({matched_bank}), "
+                        f"remarks: {real_remarks[:120]!r}"
+                    )
+                    continue
+
+            ad_min_limit = float(adv.get("minSingleTransAmount", 0))
+            ad_max_limit = float(
+                adv.get("maxSingleTransAmount")
+                or adv.get("dynamicMaxSingleTransAmount")
+                or 0
+            )
+
+            # Фільтр по мінімальній сумі користувача.
+            # Для PaySend на продаж — окремий поріг суми, якщо задано.
+            if trade_type == "SELL" and matched_bank == "paysend":
+                my_amount_for_ad = user_data.get("min_amount_sell_paysend", my_amount)
+            else:
+                my_amount_for_ad = my_amount
+
+            if ad_max_limit > 0 and ad_max_limit < my_amount_for_ad:
+                continue
+
+            # ✅ НОВИЙ ФІЛЬТР: якщо є баланс USDT — перевіряємо чи влізе вся сума
+            if balance_usdt > 0 and trade_type == "SELL":
+                my_usdt_in_uah = balance_usdt * price
+                if ad_max_limit > 0 and ad_max_limit < my_usdt_in_uah:
+                    continue
+
+            stats  = user.get("userStatsRet") or user.get("userStat") or {}
+            orders = (
+                user.get("monthOrderCount")
+                or user.get("orderCount")
+                or stats.get("completedOrderNum")
+                or stats.get("recentOrderNum")
+                or 0
+            )
+            rate_raw = (
+                user.get("monthFinishRate")
+                or user.get("positiveRate")
+                or stats.get("completionRate")
+                or stats.get("recentExecuteRate")
+                or 0
+            )
+            rate = round(float(rate_raw) * 100, 1) if float(rate_raw) <= 1 else round(float(rate_raw), 1)
+
+            results.append({
+                "price":         price,
+                "merchant":      merchant,
+                "advertiser_no": user.get("userNo") or user.get("advertiserNo") or "",
+                "adv_no":        adv.get("advNo") or "",
+                "min_limit":     ad_min_limit,
+                "max_limit":     ad_max_limit,
+                "remarks":       real_remarks,
+                "orders":        orders,
+                "rate":          rate,
+                "bank":          matched_bank,
+                "bank_label":    BANK_LABELS[matched_bank],
+                "api_token":     has_api_tok,
+            })
+
+        if not results:
+            logger.info(
+                f"Binance P2P ({trade_type}): отримано {len(raw_items)} оголошень (усі сторінки), "
+                f"жодне не пройшло фільтри (банки/ліміти/бан-лист)"
+            )
+            return []  # жодне оголошення не пройшло фільтри — API живий, просто зараз нічого підходящого
+
+        results.sort(key=lambda x: x["price"], reverse=(trade_type == "SELL"))
+        return results
+
+    except Exception as e:
+        logger.error(f"Помилка обробки P2P ({trade_type}): {e}", exc_info=True)
+        return None
 
 
 def fmt_limit(mn, mx):
     def fmt(n): return f"{int(n):,}".replace(",", " ")
     return f"{fmt(mn)} – {fmt(mx)} UAH" if mx and mx != mn else f"{fmt(mn)} UAH"
+
+
+# ==================== "МОНІТОР ЗАРАЗ" ДЛЯ CZK / PLN ====================
+#
+# На відміну від UAH (де бот шукає чужі оголошення і показує їх як звичайний
+# тейкер), для CZK/PLN користувач торгує СВОЇМИ ордерами (як мейкер), тому
+# мітки купівлі/продажу на екрані інвертовані відносно напрямку tradeType:
+#
+#   tradeType=BUY  на Binance = "хтось хоче купити USDT" -> для користувача
+#                    це означає, що USDT ПАДАЄ йому на Binance, а він платить
+#                    валютою (CZK/PLN) -> для нього це фактично "🔴 Продаж"
+#                    (він купує USDT за валюту).
+#   tradeType=SELL на Binance = "хтось хоче продати USDT" -> для користувача
+#                    це "🟢 Покупка" (він продає USDT і отримує валюту).
+#
+# Тягнемо лише першу сторінку (без банківських фільтрів/блеклиста — це
+# швидкий довідковий спред, а не список конкретних оголошень для угоди).
+
+FX_ROWS = 20
+
+def get_fx_top_price(trade_type: str, fiat: str):
+    """Найкраща ціна (перша сторінка) для пари USDT/{fiat}. None, якщо не вдалось."""
+    url = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
+    data = {
+        "asset": "USDT",
+        "fiat": fiat,
+        "merchantCheck": False,
+        "page": 1, "rows": FX_ROWS,
+        "payTypes": [],
+        "tradeType": trade_type,
+    }
+    for attempt in range(MAX_RETRIES):
+        try:
+            r = session.post(url, json=data, timeout=10)
+            if r.status_code == 429:
+                wait = RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
+                logger.warning(f"Rate limit Binance P2P ({fiat}/{trade_type}), чекаю {wait}с")
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            resp = r.json()
+            items = resp.get("data") or []
+            if not items:
+                return None
+            adv  = items[0]["adv"]
+            user = items[0]["advertiser"]
+            return {
+                "price":    float(adv["price"]),
+                "merchant": user.get("nickName", ""),
+            }
+        except requests.exceptions.Timeout:
+            logger.warning(f"Таймаут ({fiat}/{trade_type}), спроба {attempt+1}/{MAX_RETRIES}")
+        except Exception as e:
+            logger.warning(f"Помилка {fiat}/{trade_type}: {e}")
+        if attempt < MAX_RETRIES - 1:
+            time.sleep(RETRY_DELAYS[attempt])
+    return None
+
+
+def build_fx_monitor_text() -> str:
+    """Блок спредів по CZK і PLN для '📊 Монітор зараз' (мітки інвертовані)."""
+    fiats = [("CZK", "🇨🇿 CZK"), ("PLN", "🇵🇱 PLN")]
+
+    fx_results = {}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {}
+        for fiat, _ in fiats:
+            futures[pool.submit(get_fx_top_price, "BUY",  fiat)] = (fiat, "BUY")
+            futures[pool.submit(get_fx_top_price, "SELL", fiat)] = (fiat, "SELL")
+        for fut in as_completed(futures):
+            fiat, tt = futures[fut]
+            try:
+                fx_results[(fiat, tt)] = fut.result()
+            except Exception as e:
+                logger.warning(f"Помилка паралельного fetch fx {fiat}/{tt}: {e}")
+                fx_results[(fiat, tt)] = None
+
+    blocks = []
+    for fiat, fiat_label in fiats:
+        buy_ad  = fx_results.get((fiat, "BUY"))   # -> "🔴 Продаж" для юзера
+        sell_ad = fx_results.get((fiat, "SELL"))  # -> "🟢 Покупка" для юзера
+        if buy_ad and sell_ad:
+            spread = round(abs((sell_ad["price"] - buy_ad["price"]) / buy_ad["price"]) * 100, 2)
+            blocks.append(
+                f"\n\n{fiat_label}\n{'─'*22}\n"
+                f"🔴 Продаж (купую USDT): {buy_ad['price']} {fiat}\n"
+                f"🟢 Покупка (продаю USDT): {sell_ad['price']} {fiat}\n"
+                f"📊 Спред: {spread}%"
+            )
+        else:
+            blocks.append(f"\n\n{fiat_label}: 🚨 недоступно")
+
+    if not blocks:
+        return ""
+
+    return (
+        "".join(blocks) +
+        "\n\nℹ️ Для CZK/PLN мітки інвертовані: я торгую своїми ордерами, "
+        "тому 🔴 Продаж = я купую USDT (плачу валютою), "
+        "🟢 Покупка = я продаю USDT (отримую валюту)."
+    )
 
 
 # ==================== ВІДПРАВКА АЛЕРТІВ ====================
@@ -658,6 +848,50 @@ def monitor_thread():
             time.sleep(10)
 
 
+# ==================== АВТО-АЛЕРТ ПО СПРЕДУ CZK ====================
+
+def czk_alert_thread():
+    """Окремий фоновий потік: раз на CZK_CHECK_INTERVAL сек рахує спред
+    USDT/CZK і шле адміну алерт, якщо спред перевищив поріг (за замовчуванням
+    2.5%, налаштовується адміном через меню). Щоб не спамити на кожній
+    ітерації, алерт шлеться лише в момент ПЕРЕТИНУ порогу знизу вгору;
+    повторний алерт можливий тільки після того, як спред знову опуститься
+    нижче порогу і потім знову підніметься."""
+    global czk_alert_active
+    logger.info("Потік CZK-алертів запущено")
+
+    while True:
+        try:
+            admin = get_user(ADMIN_ID)
+            threshold = (admin or {}).get("czk_spread_threshold", 2.5)
+
+            buy_ad  = get_fx_top_price("BUY",  "CZK")   # -> "🔴 Продаж" для юзера
+            sell_ad = get_fx_top_price("SELL", "CZK")   # -> "🟢 Покупка" для юзера
+
+            if buy_ad and sell_ad and buy_ad["price"]:
+                spread = round(abs((sell_ad["price"] - buy_ad["price"]) / buy_ad["price"]) * 100, 2)
+
+                with czk_alert_lock:
+                    if spread >= threshold and not czk_alert_active:
+                        czk_alert_active = True
+                        try:
+                            bot.send_message(
+                                ADMIN_ID,
+                                f"🇨🇿 Спред на CZK перевищив поріг!\n{'─'*22}\n"
+                                f"📊 Спред: {spread}% (поріг {threshold}%)\n"
+                                f"🔴 Продаж (купую USDT): {buy_ad['price']} CZK\n"
+                                f"🟢 Покупка (продаю USDT): {sell_ad['price']} CZK")
+                        except Exception:
+                            pass
+                    elif spread < threshold and czk_alert_active:
+                        czk_alert_active = False
+
+        except Exception as e:
+            logger.error(f"Критична помилка в czk_alert_thread: {e}", exc_info=True)
+
+        time.sleep(CZK_CHECK_INTERVAL)
+
+
 # ==================== МЕНЮ ====================
 
 def send_main_menu(chat_id: int):
@@ -676,6 +910,7 @@ def send_main_menu(chat_id: int):
     markup.add(types.KeyboardButton("🏦 Банки"),            types.KeyboardButton("📋 Статус"))
 
     if is_admin(chat_id):
+        markup.add(types.KeyboardButton("🇨🇿 Поріг CZK алерту"))
         markup.add(types.KeyboardButton("👥 Адмін панель"))
 
     balance_text = f"{ud['balance_usdt']} USDT" if ud["balance_usdt"] > 0 else "вимкнено"
@@ -1020,6 +1255,11 @@ def update_val(m, param):
                 raise ValueError("Мінімальний інтервал — 5 сек")
             update_user_field(cid, "check_interval", int(v))
             bot.send_message(cid, f"✅ Інтервал: {int(v)} сек")
+        elif param == "czk_threshold":
+            if not is_admin(cid):
+                raise ValueError("Тільки для адміна")
+            update_user_field(cid, "czk_spread_threshold", v)
+            bot.send_message(cid, f"✅ Поріг алерту по CZK: {v}%")
 
     except ValueError as e:
         bot.send_message(cid, f"❌ Помилка: {e}")
@@ -1094,7 +1334,7 @@ def _handle(message, text):
         "📋 Статус", "📉 Поріг покупки", "📈 Поріг продажу",
         "💰 Моя сума BUY", "💰 Моя сума SELL", "💰 Сума SELL Paysend", "💎 Баланс USDT",
         "⏱ Інтервал", "🚫 Блеклист BUY", "🚫 Блеклист SELL",
-        "🏦 Банки", "👥 Адмін панель"
+        "🏦 Банки", "👥 Адмін панель", "🇨🇿 Поріг CZK алерту"
     ]
 
     if text not in known:
@@ -1140,13 +1380,16 @@ def _handle(message, text):
                     f"= {profit_sign}{profit_uah} UAH"
                 )
 
+            fx_text = build_fx_monitor_text()
+
             bot.send_message(cid,
                 f"📊 Поточні ціни\n{'─'*22}\n"
                 f"🟢 BUY:  {buy['price']} ₴  ({buy['merchant']}, {buy['bank_label']})\n"
                 f"🔴 SELL: {sell['price']} ₴  ({sell['merchant']}, {sell['bank_label']})\n"
                 f"📊 Спред: {spread}%"
                 f"{profit_text}"
-                f"{history_text}")
+                f"{history_text}"
+                f"{fx_text}")
         else:
             bot.send_message(cid, "🚨 Binance P2P недоступний")
 
@@ -1233,6 +1476,17 @@ def _handle(message, text):
         msg = bot.send_message(cid, f"⏱ Поточний інтервал: {ud_fresh['check_interval']} сек\nВведи нове значення (сек):")
         bot.register_next_step_handler(msg, lambda m: update_val(m, "interval"))
 
+    elif text == "🇨🇿 Поріг CZK алерту":
+        if not is_admin(cid):
+            bot.send_message(cid, "❌ Тільки для адміна")
+            return
+        ud_fresh = get_user(cid)
+        cur = ud_fresh.get("czk_spread_threshold", 2.5)
+        msg = bot.send_message(cid,
+            f"🇨🇿 Поточний поріг алерту по CZK: {cur}%\n"
+            f"Введи нове значення у % (наприклад 2.5):")
+        bot.register_next_step_handler(msg, lambda m: update_val(m, "czk_threshold"))
+
     elif text == "🏦 Банки":
         send_banks_menu(cid)
 
@@ -1248,5 +1502,6 @@ def _handle(message, text):
 if __name__ == "__main__":
     logger.info("Бот запускається (мультикористувацький режим)...")
     threading.Thread(target=monitor_thread, daemon=True).start()
+    threading.Thread(target=czk_alert_thread, daemon=True).start()
     logger.info("Polling запущено")
     bot.infinity_polling()
