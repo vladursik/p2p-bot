@@ -117,7 +117,9 @@ def add_to_blacklist(chat_id: int, merchant: str, trade_type: str) -> bool:
     key   = str(chat_id)
     field = "blacklist_buy" if trade_type == "BUY" else "blacklist_sell"
     with users_lock:
-        bl = users[key][field]
+        if key not in users:
+            return False
+        bl = users[key].setdefault(field, [])
         if merchant in bl:
             return False
         bl.append(merchant)
@@ -128,7 +130,9 @@ def remove_from_blacklist(chat_id: int, merchant: str, trade_type: str) -> bool:
     key   = str(chat_id)
     field = "blacklist_buy" if trade_type == "BUY" else "blacklist_sell"
     with users_lock:
-        bl = users[key][field]
+        if key not in users:
+            return False
+        bl = users[key].setdefault(field, [])
         if merchant not in bl:
             return False
         bl.remove(merchant)
@@ -139,6 +143,8 @@ def clear_blacklist(chat_id: int, trade_type: str):
     key   = str(chat_id)
     field = "blacklist_buy" if trade_type == "BUY" else "blacklist_sell"
     with users_lock:
+        if key not in users:
+            return
         users[key][field] = []
         save_users(users)
 
@@ -1120,10 +1126,11 @@ def handle_bank_done(call):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("bl|"))
 def handle_blacklist_callback(call):
     cid = call.from_user.id
-    if not is_active(cid):
-        bot.answer_callback_query(call.id, "❌ Немає доступу")
-        return
     try:
+        if not is_active(cid):
+            bot.answer_callback_query(call.id, "❌ Немає доступу")
+            return
+
         _, trade_type, merchant = call.data.split("|", 2)
         added = add_to_blacklist(cid, merchant, trade_type)
         label = "BUY 🟢" if trade_type == "BUY" else "SELL 🔴"
@@ -1143,7 +1150,12 @@ def handle_blacklist_callback(call):
             bot.answer_callback_query(call.id, f"⚠️ {disp} вже в блеклісті")
     except Exception as e:
         logger.error(f"Помилка handle_blacklist_callback: {e}", exc_info=True)
-        bot.answer_callback_query(call.id, "❌ Помилка")
+        # Гарантуємо, що Telegram завжди отримає відповідь на callback,
+        # інакше кнопка "висить" з крутилкою нескінченно.
+        try:
+            bot.answer_callback_query(call.id, "❌ Помилка, дивись bot.log")
+        except Exception:
+            pass
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("unbl"))
