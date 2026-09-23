@@ -265,9 +265,16 @@ BANK_KEYWORDS = {
 DEFAULT_ENABLED_BANKS = {"mono": True, "privat": True, "abank": True, "pumb": True, "ukrgaz": True, "sense": True, "paysend": True, "iban": True}
 BANK_ORDER = ["mono", "privat", "abank", "pumb", "ukrgaz", "sense", "paysend", "iban"]
 
-# Банки/методи, для яких умови ордера (remarks) шукаємо в доповнення до
-# способів оплати Binance, бо як окремий tradeMethod вони майже не зустрічаються.
-BANKS_MATCH_IN_REMARKS = {"paysend", "iban"}
+# PaySend: шукаємо і в способах оплати Binance, і в умовах ордера (remarks) —
+# бо як окремий tradeMethod він майже не зустрічається.
+BANKS_MATCH_IN_REMARKS = {"paysend"}
+
+# IBAN: шукаємо ТІЛЬКИ в умовах ордера (remarks), тобто в тому, що сам
+# продавець написав текстом. Спосіб оплати Binance свідомо ІГНОРУЄМО —
+# там сама назва методу може містити "(IBAN)" як формальний варіант
+# картки/рахунку (напр. "ПриватБанк (IBAN)", "ПУМБ (IBAN)"), і це НЕ
+# означає, що продавець сам просить оплату саме через IBAN.
+BANKS_REMARKS_ONLY = {"iban"}
 
 def get_enabled_banks(ud: dict) -> dict:
     eb = (ud or {}).get("enabled_banks")
@@ -503,9 +510,16 @@ def get_binance_p2p(trade_type: str, user_data: dict):
             for bank_key in BANK_ORDER:
                 if not enabled_banks.get(bank_key, True):
                     continue
-                # PaySend та IBAN шукаємо і в способах оплати, і в умовах ордера —
-                # решту банків, як і раніше, тільки в способах оплати.
-                haystack = (pay_methods_text + " " + remarks_lower) if bank_key in BANKS_MATCH_IN_REMARKS else pay_methods_text
+                # PaySend шукаємо і в способах оплати, і в умовах ордера.
+                # IBAN шукаємо ТІЛЬКИ в умовах ордера (remarks) — спосіб
+                # оплати Binance ігноруємо, бо там "(IBAN)" — це просто
+                # формальна назва варіанту картки/рахунку, не вибір продавця.
+                if bank_key in BANKS_REMARKS_ONLY:
+                    haystack = remarks_lower
+                elif bank_key in BANKS_MATCH_IN_REMARKS:
+                    haystack = pay_methods_text + " " + remarks_lower
+                else:
+                    haystack = pay_methods_text
                 if any(kw in haystack for kw in BANK_KEYWORDS[bank_key]):
                     matched_banks.append(bank_key)
             if not matched_banks:
